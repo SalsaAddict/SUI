@@ -410,6 +410,7 @@ CREATE TABLE [Company] (
 		[COV] BIT NOT NULL CONSTRAINT [DF_Company_COV] DEFAULT (0), -- Coverholder
 		[CAR] BIT NOT NULL CONSTRAINT [DF_Company_CAR] DEFAULT (0), -- Carrier
 		[TPA] BIT NOT NULL CONSTRAINT [DF_Company_TPA] DEFAULT (0), -- Third-Party Administrator
+		[RBR] BIT NOT NULL CONSTRAINT [DF_Company_RBR] DEFAULT (0), -- Retail Broker
 		[CreatedDTO] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_Company_CreatedDTO] DEFAULT (GETUTCDATE()),
 		[CreatedById] INT NOT NULL,
 		[UpdatedDTO] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_Company_UpdatedDTO] DEFAULT (GETUTCDATE()),
@@ -425,8 +426,8 @@ CREATE TABLE [Company] (
 GO
 
 -- ##TESTDATA
-INSERT INTO [Company] ([Name], [CountryId], [LBR], [COV], [CAR], [TPA], [CreatedById], [UpdatedById])
-SELECT [Name], [CountryId], [LBR], [COV], [CAR], [TPA], 1, 1
+INSERT INTO [Company] ([Name], [CountryId], [LBR], [COV], [CAR], [TPA], [RBR], [CreatedById], [UpdatedById])
+SELECT [Name], [CountryId], [LBR], [COV], [CAR], [TPA], [RBR], 1, 1
 FROM (VALUES
    ('A Plus Lawn Care'),
    ('A+ Investments'),
@@ -828,6 +829,7 @@ FROM (VALUES
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) cov ([COV])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) car ([CAR])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) tpa ([TPA])
+	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) rbr ([RBR])
 GO
 
 CREATE TABLE [CompanyRole] (
@@ -845,7 +847,8 @@ VALUES
  (N'LBR', N'Lloyd''s Broker', 1),
 	(N'COV', N'Coverholder', 2),
 	(N'CAR', N'Carrier', 3),
-	(N'TPA', N'Third-Party Administrator', 4)
+	(N'TPA', N'Third-Party Administrator', 4),
+	(N'RBR', N'Retail Broker', 5)
 GO
 
 CREATE TABLE [CompanyType] (
@@ -900,6 +903,7 @@ BEGIN
 		[COV] = cmp.[COV],
 		[CAR] = cmp.[CAR],
 		[TPA] = cmp.[TPA],
+		[RBR] = cmp.[RBR],
 		[UpdatedDTO] = cmp.[UpdatedDTO]
 	FROM [Company] cmp
 	WHERE cmp.[Id] = @CompanyId
@@ -927,6 +931,7 @@ CREATE PROCEDURE [apiCompanySave](
 		@COV BIT = NULL,
 		@CAR BIT = NULL,
 		@TPA BIT = NULL,
+		@RBR BIT = NULL,
 		@Active BIT = NULL,
 		@UserId INT
  )
@@ -944,6 +949,7 @@ BEGIN
 				[COV],
 				[CAR],
 				[TPA],
+				[RBR],
 				[CreatedDTO],
 				[CreatedById],
 				[UpdatedDTO],
@@ -959,6 +965,7 @@ BEGIN
 				ISNULL(@COV, 0),
 				ISNULL(@CAR, 0),
 				ISNULL(@TPA, 0),
+				ISNULL(@RBR, 0),
 				GETUTCDATE(),
 				@UserId,
 				GETUTCDATE(),
@@ -979,6 +986,7 @@ BEGIN
 			[COV] = ISNULL(@COV, [LBR]),
 			[CAR] = ISNULL(@CAR, [CAR]),
 			[TPA] = ISNULL(@TPA, [TPA]),
+			[RBR] = ISNULL(@RBR, [RBR]),
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId,
 			[Active] = ISNULL(@Active, [Active])

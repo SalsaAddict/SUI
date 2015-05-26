@@ -98,6 +98,7 @@ angular.module("sui", [
                     switch (item.type) {
                         case "route": parameter.value = $routeParams[item.value]; break;
                         case "scope": parameter.value = $parse(item.value)($scope.$parent); break;
+                        case "now": parameter.value = new Date.now();
                         default: parameter.value = item.value; break;
                     }
                     parameter.xml = angular.isObject(parameter.value);
@@ -185,7 +186,7 @@ angular.module("sui", [
                 value: $scope.value,
                 required: ($scope.required === "true")
             }
-            if (["route", "scope"].indexOf($scope.parameter.type) < 0) $scope.parameter.type = "value";
+            if (["route", "scope", "now"].indexOf($scope.parameter.type) < 0) $scope.parameter.type = "value";
             if (!$scope.parameter.value) { if ($scope.parameter.type !== "value") $scope.parameter.value = $scope.parameter.name };
         }],
         require: "^^suiProc",
