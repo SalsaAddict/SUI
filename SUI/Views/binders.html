@@ -1,0 +1,97 @@
+﻿<sui>
+    <sui-proc name="apiBinderCoverholder" model="Coverholders" run="once" />
+    <sui-proc name="apiBinderSectionCarrier" model="Carriers" run="once" />
+    <sui-proc name="apiClassOfBusiness" model="Classes" run="once" />
+    <sui-proc name="apiBinders" model="Binders" run="auto">
+        <sui-proc-param name="ClassId" type="scope" value="$localStorage.BinderSearch.ClassId" />
+        <sui-proc-param name="CarrierId" type="scope" value="$localStorage.BinderSearch.CarrierId" />
+        <sui-proc-param name="Date" type="scope" value="$localStorage.BinderSearch.Date" />
+        <sui-proc-param name="CoverholderId" type="scope" value="$localStorage.BinderSearch.CoverholderId" />
+    </sui-proc>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-sm-9">
+                    <h4><b>Binders</b></h4>
+                </div>
+                <div class="col-sm-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search&hellip;" ng-model="SearchText" />
+                        <span class="input-group-btn" title="Advanced Search">
+                            <button class="btn btn-default" ng-click="$localStorage.BinderSearch = { Advanced: !$localStorage.BinderSearch.Advanced }">
+                                <i class="fa fa-bullseye"></i>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body" collapse="!$localStorage.BinderSearch.Advanced">
+            <form class="form-horizontal">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <sui-form-label heading="Coverholder">
+                            <select ng-model="$localStorage.BinderSearch.CoverholderId" ng-options="Coverholder.CoverholderId as Coverholder.Coverholder for Coverholder in Coverholders" sui-form-control>
+                                <option value=""></option>
+                            </select>
+                        </sui-form-label>
+                    </div>
+                    <div class="col-sm-6">
+                        <sui-form-label heading="Carrier">
+                            <select ng-model="$localStorage.BinderSearch.CarrierId" ng-options="Carrier.CarrierId as Carrier.Carrier for Carrier in Carriers" sui-form-control>
+                                <option value=""></option>
+                            </select>
+                        </sui-form-label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <sui-form-label heading="Class">
+                            <select ng-model="$localStorage.BinderSearch.ClassId" ng-options="Class.Id as Class.Description for Class in Classes" sui-form-control>
+                                <option value=""></option>
+                            </select>
+                        </sui-form-label>
+                    </div>
+                    <div class="col-sm-6">
+                        <sui-form-label heading="Date">
+                            <input type="date" ng-model="$localStorage.BinderSearch.Date" sui-form-control />
+                        </sui-form-label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>UMR</th>
+                        <th>Coverholder</th>
+                        <th>Broker</th>
+                        <th>Inception</th>
+                        <th>Expiry</th>
+                        <th>PDF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-click="changeRoute('/binder')">
+                        <td colspan="5">
+                            <span class="text-primary">
+                                <i class="fa fa-plus-circle"></i> New Binder
+                            </span>
+                        </td>
+                    </tr>
+                    <tr ng-repeat="Binder in Binders | filter : SearchText" ng-click="changeRoute('/binder/' + Binder.BinderId)">
+                        <td>{{Binder.UMR}}</td>
+                        <td>{{Binder.Coverholder}}</td>
+                        <td>{{Binder.Broker}}</td>
+                        <td>{{Binder.InceptionDate | date : "shortDate"}}</td>
+                        <td>{{Binder.ExpiryDate | date : "shortDate"}}</td>
+                        <td ng-click="PDF($event, Binder.BinderId)">
+                            <a href class="text-danger"><i class="fa fa-file-pdf-o"></i> PDF</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</sui>

@@ -1,0 +1,46 @@
+﻿<sui>
+    <sui-proc name="apiIncidents" model="Incidents" run="once" />
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-sm-9">
+                    <h4><b>Incidents</b></h4>
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" placeholder="Search&hellip;" ng-model="SearchText" />
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>System Number</th>
+                        <th>TPA</th>
+                        <th>Coverholder</th>
+                        <th>Policyholder</th>
+                        <th>Incident Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-click="changeRoute('/incident')">
+                        <td colspan="5">
+                            <span class="text-primary">
+                                <i class="fa fa-plus-circle"></i> New Incident
+                            </span>
+                        </td>
+                    </tr>
+                    <tr ng-repeat="Incident in Incidents | filter : SearchText" ng-click="changeRoute('/incident/' + Incident.IncidentId)">
+                        <td>{{Incident.SysNum}}</td>
+                        <td>{{Incident.Administrator}}</td>
+                        <td>{{Incident.Coverholder}}</td>
+                        <td>{{Incident.Policyholder | date : "shortDate"}}</td>
+                        <td>{{Incident.DateIncident | date : "shortDate"}}</td>
+                        <td>{{Incident.Status}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</sui>

@@ -1,0 +1,71 @@
+﻿<sui>
+    <sui-proc name="apiBinderSection" type="object" root="Section" model="Section" run="once">
+        <sui-proc-param name="SectionId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiClassOfBusiness" model="Classes" run="once" />
+    <sui-proc name="apiBinderSectionAdministrator" model="Administrators" run="once">
+        <sui-proc-param name="SectionId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiBinderSectionCarrier" model="Carriers" run="once">
+        <sui-proc-param name="BinderId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiBinderSectionSave">
+        <sui-proc-param name="SectionId" type="route" />
+        <sui-proc-param name="BinderId" type="route" required="true" />
+        <sui-proc-param name="ClassId" type="scope" value="Section.ClassId" required="true" />
+        <sui-proc-param name="Title" type="scope" value="Section.Title" required="true" />
+        <sui-proc-param name="AdministratorId" type="scope" value="Section.AdministratorId" required="true" />
+        <sui-proc-param name="Carriers" type="scope" value="Section.Carriers" />
+    </sui-proc>
+    <sui-form heading="{{Section.Title || 'New Section'}}" back="/binder/{{routeParam('BinderId')}}" save="apiBinderSectionSave">
+        <sui-form-content heading="Section Details">
+            <sui-form-label heading="Title">
+                <input type="text" ng-model="Section.Title" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Class of Business">
+                <select ng-model="Section.ClassId" ng-options="Class.Id as Class.Description for Class in Classes" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Third-Party Administrator">
+                <select ng-model="Section.AdministratorId" ng-options="Administrator.AdministratorId as Administrator.Administrator for Administrator in Administrators" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Carriers">
+            <div class="list-group">
+                <a href class="list-group-item" ng-click="AddCarrier()">
+                    <span class="text-primary">
+                        <i class="fa fa-plus-circle"></i> New Carrier
+                    </span>
+                </a>
+            </div>
+            <div class="row" ng-repeat="Carrier in Section.Carriers">
+                <div class="col-sm-8">
+                    <sui-form-label heading="{{CarrierLabel($index)}}">
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" title="Remove Carrier" ng-click="suiArrayDelete()">
+                                    <i class="fa fa-remove"></i>
+                                </button>
+                            </span>
+                            <select ng-model="Carrier.CarrierId" ng-options="Carrier.CarrierId as Carrier.Carrier for Carrier in Carriers" required sui-form-control>
+                                <option value=""></option>
+                            </select>
+                        </div>
+                    </sui-form-label>
+                </div>
+                <div class="col-sm-4">
+                    <sui-form-label heading="Split">
+                        <div class="input-group" ng-class="{'has-warning': Total() !== 1}">
+                            <input type="number" min="0" max="100" ng-model="Carrier.Percentage" required sui-form-control="percent" />
+                            <span class="input-group-addon">%</span>
+                        </div>
+                        <sui-validator function="CheckTotal()" message="The total must equal 100%" />
+                    </sui-form-label>
+                </div>
+            </div>
+        </sui-form-content>
+    </sui-form>
+</sui>

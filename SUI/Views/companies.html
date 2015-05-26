@@ -1,0 +1,26 @@
+﻿<sui>
+    <sui-proc name="apiCompanies" model="Companies" run="once"></sui-proc>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-sm-9">
+                    <h4><b>Companies</b></h4>
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" placeholder="Search&hellip;" ng-model="Search" />
+                </div>
+            </div>
+        </div>
+        <div class="list-group">
+            <a ng-href="#/company" class="list-group-item">
+                <span class="text-primary">
+                    <i class="fa fa-plus-circle"></i> New Company
+                </span>
+            </a>
+            <a ng-repeat="Company in Companies | filter : Search" ng-href="#/company/{{Company.CompanyId}}" class="list-group-item">
+                <h4 class="list-group-item-heading">{{Company.Name}}</h4>
+                <p class="list-group-item-text">{{Company.Country}}</p>
+            </a>
+        </div>
+    </div>
+</sui>

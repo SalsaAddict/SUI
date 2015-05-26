@@ -1,0 +1,92 @@
+﻿<sui>
+    <sui-proc name="apiIncident" type="object" root="Incident" model="Incident" run="once">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiIncidentAdministrator" model="Administrators" run="once">
+        <sui-proc-param name="IncidentId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiIncidentCoverholder" model="Coverholders" run="once">
+        <sui-proc-param name="IncidentId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiGenders" model="Genders" run="once" />
+    <sui-proc name="apiIncidentSave">
+        <sui-proc-param name="IncidentId" type="route" />
+        <sui-proc-param name="AdministratorId" type="scope" value="Incident.AdministratorId" />
+        <sui-proc-param name="DateIncident" type="scope" value="Incident.DateIncident" />
+        <sui-proc-param name="TimeIncident" type="scope" value="Incident.TimeIncident" />
+        <sui-proc-param name="DateReported" type="scope" value="Incident.DateReported" />
+        <sui-proc-param name="Description" type="scope" value="Incident.Description" />
+        <sui-proc-param name="PolicyholderForename" type="scope" value="Incident.PolicyholderForename" />
+        <sui-proc-param name="PolicyholderSurname" type="scope" value="Incident.PolicyholderSurname" />
+        <sui-proc-param name="PolicyholderGenderId" type="scope" value="Incident.PolicyholderGenderId" />
+        <sui-proc-param name="PolicyholderDateOfBirth" type="scope" value="Incident.PolicyholderDateOfBirth" />
+        <sui-proc-param name="CoverholderId" type="scope" value="Incident.CoverholderId" />
+        <sui-proc-param name="PolicyNum" type="scope" value="Incident.PolicyNum" />
+        <sui-proc-param name="PolicyInceptionDate" type="scope" value="Incident.PolicyInceptionDate" />
+        <sui-proc-param name="PolicyExpiryDate" type="scope" value="Incident.PolicyExpiryDate" />
+    </sui-proc>
+    <sui-form heading="{{Incident.SysNum || 'New Incident'}}" save="apiIncidentSave">
+        <sui-form-content heading="Incident Details">
+            <sui-form-label heading="Third-Party Administrator">
+                <select ng-model="Incident.AdministratorId" ng-options="Administrator.AdministratorId as Administrator.Administrator for Administrator in Administrators" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Incident Date">
+                <input type="date" ng-model="Incident.DateIncident" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Incident Time">
+                <input type="time" ng-model="Incident.TimeIncident" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Date Reported">
+                <input type="date" ng-model="Incident.DateReported" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Description">
+                <textarea type="text" rows="5" ng-model="Incident.Description" required sui-form-control></textarea>
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Policyholder Details">
+            <sui-form-label heading="Forename">
+                <input type="text" ng-model="Incident.PolicyholderForename" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Surname">
+                <input type="text" ng-model="Incident.PolicyholderSurname" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Gender">
+                <select ng-model="Incident.GenderId" ng-options="Gender.Id as Gender.Description for Gender in Genders" sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date of Birth">
+                <input type="date" ng-model="Incident.DateOfBirth" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Policy Details">
+            <sui-form-label heading="Coverholder">
+                <select ng-model="Incident.CoverholderId" ng-options="Coverholder.CoverholderId as Coverholder.Coverholder for Coverholder in Coverholders" sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Policy Reference">
+                <input type="text" ng-model="Incident.PolicyNum" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Policy Inception Date">
+                <input type="date" ng-model="Incident.PolicyInceptionDate" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Policy Expiry Date">
+                <input type="date" ng-model="Incident.PolicyExpiryDate" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Status">
+            <sui-form-label heading="Incident Status">
+                <select ng-model="Incident.StatusId" ng-options="Status.Id as Status.Description for Status in Statuses" sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date Status Changed">
+                <p class="form-control-static">{{Incident.DateStatusUpdatedUTC | date : "shortDate"}}</p>
+            </sui-form-label>
+        </sui-form-content>
+    </sui-form>
+</sui>
+{{Incident}}

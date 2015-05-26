@@ -1,0 +1,32 @@
+﻿<sui>
+    <sui-proc name="apiCompany" model="Company" type="singleton" run="once">
+        <sui-proc-param name="CompanyId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiCompanyRoles" model="Roles" run="once" />
+    <sui-proc name="apiCountries" model="Countries" run="once" />
+    <sui-proc name="apiCompanySave">
+        <sui-proc-param name="CompanyId" type="route" />
+        <sui-proc-param name="Name" type="scope" value="Company.Name" required="true" />
+        <sui-proc-param name="Address" type="scope" value="Company.Address" />
+        <sui-proc-param name="Postcode" type="scope" value="Company.Postcode" />
+        <sui-proc-param name="CountryId" type="scope" value="Company.CountryId" required="true" />
+        <sui-proc-param ng-repeat="Role in Roles" name="{{Role.Id}}" type="scope" value="Company.{{Role.Id}}" />
+    </sui-proc>
+    <sui-form heading="{{Company.Name || 'New Company'}}" back="/companies" save="apiCompanySave">
+        <sui-form-content>
+            <sui-form-label heading="Company Name"><input type="text" ng-model="Company.Name" required sui-form-control /></sui-form-label>
+            <sui-form-label heading="Address"><textarea ng-model="Company.Address" rows="5" sui-form-control></textarea></sui-form-label>
+            <sui-form-label heading="Postcode"><input type="text" ng-model="Company.Postcode" sui-form-control /></sui-form-label>
+            <sui-form-label heading="Country">
+                <select ng-model="Company.CountryId" ng-options="Country.Id as Country.Name for Country in Countries" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <div class="form-group" ng-repeat="Role in Roles">
+                <div class="col-sm-9 col-sm-offset-3">
+                    <div class="checkbox"><label><input type="checkbox" ng-model="Company[Role.Id]" sui-form-control /> {{Role.Description}}</label></div>
+                </div>
+            </div>
+        </sui-form-content>
+    </sui-form>
+</sui>

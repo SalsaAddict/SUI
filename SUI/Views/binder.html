@@ -1,0 +1,105 @@
+﻿<sui>
+    <sui-proc name="apiBinder" type="singleton" model="Binder" run="once">
+        <sui-proc-param name="BinderId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiBinderCoverholder" model="Coverholders" run="once">
+        <sui-proc-param name="BinderId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiBinderBroker" model="Brokers" run="once">
+        <sui-proc-param name="BinderId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiTerritories" model="Territories" run="once" />
+    <sui-proc name="apiBinderSections" model="Sections" run="once">
+        <sui-proc-param name="BinderId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiBinderSave">
+        <sui-proc-param name="BinderId" type="route" />
+        <sui-proc-param name="UMR" type="scope" value="Binder.UMR" />
+        <sui-proc-param name="Reference" type="scope" value="Binder.Reference" />
+        <sui-proc-param name="CoverholderId" type="scope" value="Binder.CoverholderId" />
+        <sui-proc-param name="BrokerId" type="scope" value="Binder.BrokerId" />
+        <sui-proc-param name="InceptionDate" type="scope" value="Binder.InceptionDate" />
+        <sui-proc-param name="ExpiryDate" type="scope" value="Binder.ExpiryDate" />
+        <sui-proc-param name="RisksTerritoryId" type="scope" value="Binder.RisksTerritoryId" />
+        <sui-proc-param name="DomiciledTerritoryId" type="scope" value="Binder.DomiciledTerritoryId" />
+        <sui-proc-param name="LimitsTerritoryId" type="scope" value="Binder.LimitsTerritoryId" />
+    </sui-proc>
+    <sui-form heading="{{Binder.UMR || 'New Binder'}}" back="/binders" save="apiBinderSave">
+        <sui-form-content heading="Binder Details">
+            <sui-form-label heading="Agreement Number"><input type="text" ng-model="Binder.Reference" sui-form-control /></sui-form-label>
+            <sui-form-label heading="Unique Market Reference"><input type="text" ng-model="Binder.UMR" required sui-form-control /></sui-form-label>
+            <sui-form-label heading="Coverholder">
+                <div class="input-group">
+                    <select ng-model="Binder.CoverholderId" ng-options="Coverholder.CoverholderId as Coverholder.Coverholder for Coverholder in Coverholders" required sui-form-control>
+                        <option value=""></option>
+                    </select>
+                    <span class="input-group-btn">
+                        <a ng-href="#/company/{{Binder.CoverholderId}}" target="_blank" class="btn btn-default" ng-disabled="!Binder.CoverholderId">
+                            <i class="fa fa-info-circle"></i>
+                        </a>
+                    </span>
+                </div>
+            </sui-form-label>
+            <sui-form-label heading="Broker">
+                <div class="input-group">
+                    <select ng-model="Binder.BrokerId" ng-options="Broker.BrokerId as Broker.Broker for Broker in Brokers" required sui-form-control>
+                        <option value=""></option>
+                    </select>
+                    <span class="input-group-btn">
+                        <a ng-href="#/company/{{Binder.BrokerId}}" target="_blank" class="btn btn-default" ng-disabled="!Binder.BrokerId">
+                            <i class="fa fa-info-circle"></i>
+                        </a>
+                    </span>
+                </div>
+            </sui-form-label>
+            <sui-form-label heading="Inception Date"><input type="date" ng-model="Binder.InceptionDate" required sui-form-control /></sui-form-label>
+            <sui-form-label heading="Expiry Date"><input type="date" ng-model="Binder.ExpiryDate" required sui-form-control /></sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Territories">
+            <sui-form-label heading="Risks Located in">
+                <select ng-model="Binder.RisksTerritoryId" ng-options="Territory.TerritoryId as Territory.Territory for Territory in Territories" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Insureds Domiciled in">
+                <select ng-model="Binder.DomiciledTerritoryId" ng-options="Territory.TerritoryId as Territory.Territory for Territory in Territories" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Territorial Limits">
+                <select ng-model="Binder.LimitsTerritoryId" ng-options="Territory.TerritoryId as Territory.Territory for Territory in Territories" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Sections" ng-if="routeParam('BinderId')">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Class</th>
+                            <th>Lead</th>
+                            <th>TPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-click="changeRoute('/binder/' + routeParam('BinderId') + '/section')">
+                            <td colspan="4">
+                                <span class="text-primary">
+                                    <i class="fa fa-plus-circle"></i> New Section
+                                </span>
+                            </td>
+                        </tr>
+                        <tr ng-repeat="Section in Sections" ng-click="changeRoute('/binder/' + routeParam('BinderId') + '/section/' + Section.SectionId)">
+                            <td>{{Section.Title}}</td>
+                            <td>{{Section.Class}}</td>
+                            <td>{{Section.Lead}}</td>
+                            <td>{{Section.TPA}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </sui-form-content>
+    </sui-form>
+</sui>
