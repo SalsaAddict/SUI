@@ -1,3 +1,4 @@
+IF OBJECT_ID(N'apiClaimSave', N'P') IS NOT NULL DROP PROCEDURE [apiClaimSave]
 IF OBJECT_ID(N'apiClaimBinder', N'P') IS NOT NULL DROP PROCEDURE [apiClaimBinder]
 IF OBJECT_ID(N'apiClaim', N'P') IS NOT NULL DROP PROCEDURE [apiClaim]
 IF OBJECT_ID(N'apiClaims', N'P') IS NOT NULL DROP PROCEDURE [apiClaims]
@@ -669,9 +670,19 @@ BEGIN
 		[Claimant] = cmt.[Name],
 		[Title] = clm.[Title],
 		[ClassId] = clm.[ClassId],
+		[IncidentCountry] = ico.[Name],
+		[Coverholder] = cov.[DisplayName],
+		[PolicyholderCountry] = ISNULL(pco.[Name], ico.[Name]),
+		[PolicyInceptionDate] = i.[PolicyInceptionDate],
+		[PolicyExpiryDate] = i.[PolicyExpiryDate],
 		[BinderId] = clm.[BinderId]
 	FROM [Incident] i
 	 JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId]
+		JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
+		JOIN [Country] ico ON i.[CountryId] = ico.[Id]
+		LEFT JOIN [Claimant] ph
+		  JOIN [Country] pco ON ph.[CountryId] = pco.[Id]
+		 ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
 		LEFT JOIN [Claim] clm ON cmt.[IncidentId] = clm.[IncidentId] AND cmt.[Id] = clm.[ClaimantId] AND @ClaimId = clm.[Id]
 	WHERE i.[Id] = @IncidentId
 	 AND cmt.[Id] = @ClaimantId
@@ -686,7 +697,7 @@ BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 	SELECT DISTINCT
-	 [BinderId] = b.[Id],
+	 [BinderId] = CONVERT(NVARCHAR(10), b.[Id]),
 		[Binder] = b.[UMR] + N': ' + CONVERT(NVARCHAR(10), b.[InceptionDate], 103) + N' to ' + CONVERT(NVARCHAR(10), b.[ExpiryDate], 103)
 	FROM [Incident] i
 	 LEFT JOIN [Claimant] ph ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
@@ -698,6 +709,60 @@ BEGIN
 	WHERE i.[PolicyInceptionDate] BETWEEN b.[InceptionDate] AND b.[ExpiryDate]
 	ORDER BY 2
 	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiClaimSave](
+  @IncidentId INT,
+		@ClaimantId INT,
+		@ClaimId INT = NULL,
+		@Title NVARCHAR(255) = NULL,
+		@ClassId NVARCHAR(5) = NULL,
+		@BinderId INT = NULL,
+		@UserId INT
+ )
+AS
+BEGIN
+ SET NOCOUNT ON
+	IF @ClaimId IS NULL BEGIN
+	 INSERT INTO [Claim] (
+		  [IncidentId],
+				[ClaimantId],
+				[Title],
+				[ClassId],
+				[BinderId],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
+		 )
+		SELECT
+		 [IncidentId] = @IncidentId,
+			[ClaimantId] = @ClaimantId,
+			[Title] = @Title,
+			[ClassId] = @ClassId,
+			[BinderId] = @BinderId,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		SET @ClaimId = SCOPE_IDENTITY()
+	END ELSE BEGIN
+  UPDATE [Claim]
+		SET
+		 [IncidentId] = @IncidentId,
+			[ClaimantId] = @ClaimantId,
+			[Title] = @Title,
+			[ClassId] = @ClassId,
+			[BinderId] = @BinderId,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		WHERE [Id] = @ClaimId
+	END
+	SELECT [ClaimId] = @ClaimId
+	RETURN @ClaimId
 END
 GO
 

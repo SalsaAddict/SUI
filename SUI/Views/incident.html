@@ -83,7 +83,7 @@
                 <div class="input-group">
                     <input type="date" ng-model="Incident.DateBrokerAdvised" required sui-form-control />
                     <span class="input-group-addon">
-                        <i class="fa fa-flag {{IncidentDateBrokerAdvisedSLA.Class}}" ng-show="IncidentDateBrokerAdvisedSLA.Class"></i>
+                        <i class="fa fa-circle {{IncidentDateBrokerAdvisedSLA.Class}}" ng-show="IncidentDateBrokerAdvisedSLA.Class" title="KPI"></i>
                     </span>
                 </div>
                 <sui-validator function="DateBrokerAdvisedValidator()" message="Cannot be before the incident date" />
@@ -105,7 +105,7 @@
                 <div class="input-group">
                     <input type="date" ng-model="Incident.DateTPANotified" required sui-form-control />
                     <span class="input-group-addon">
-                        <i class="fa fa-flag {{IncidentDateTPANotifiedSLA.Class}}" ng-show="IncidentDateTPANotifiedSLA.Class"></i>
+                        <i class="fa fa-circle {{IncidentDateTPANotifiedSLA.Class}}" ng-show="IncidentDateTPANotifiedSLA.Class" title="KPI"></i>
                     </span>
                 </div>
                 <sui-validator function="DateTPANotifiedValidator()" message="Cannot be before the date broker advised" />
