@@ -1726,11 +1726,11 @@ BEGIN
 	SELECT
 	 [IncidentId] = i.[Id],
 		[SysNum] = i.[SysNum],
-		[Administrator] = tpa.[DisplayName],
+		[TPA] = tpa.[DisplayName],
 		[Coverholder] = cov.[DisplayName],
 		[Policyholder] = cmt.[Name],
 		[DateIncident] = i.[DateIncident],
-		[Status] = ish.[Status]
+		[Status] = ish.[StatusDesc]
 	FROM [Incident] i
 		JOIN [Company] tpa ON i.[AdministratorId] = tpa.[Id]
 		LEFT JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]

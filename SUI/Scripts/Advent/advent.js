@@ -9,7 +9,9 @@
         .when("/binder/:BinderId?", { caseInsensitiveMatch: true, templateUrl: "Views/binder.html" })
         .when("/binder/:BinderId/section/:SectionId?", { caseInsensitiveMatch: true, templateUrl: "Views/bindersection.html", controller: "BinderSectionController" })
         .when("/incidents", { caseInsensitiveMatch: true, templateUrl: "Views/incidents.html" })
-        .when("/incident/:IncidentId?", { caseInsensitiveMatch: true, templateUrl: "Views/incident.html" })
+        .when("/incident/:IncidentId?", { caseInsensitiveMatch: true, templateUrl: "Views/incident.html", controller: "IncidentController" })
+        .when("/incident/:IncidentId/claimant/:ClaimantId?", { caseInsensitiveMatch: true, templateUrl: "Views/claimant.html" })
+        .when("/incident/:IncidentId/claimant/:ClaimantId/claim/:ClaimId?", { caseInsensitiveMatch: true, templateUrl: "Views/claim.html" })
         .otherwise({ redirectTo: "/home" });
 }])
 
@@ -39,7 +41,7 @@
     }
     $scope.RemoveExpert = function (Item) {
         var Index = $scope.Section.Carriers.indexOf(Item);
-        $scope.Section.Carriers.splice(Index, 1); 
+        $scope.Section.Carriers.splice(Index, 1);
         $scope.$broadcast("sui.form.dirty");
     }
     $scope.AddExpert = function () {
@@ -52,5 +54,32 @@
         return Total;
     }
     $scope.CheckTotal = function () { return ($scope.Total() === 1); }
+}])
+
+.controller("IncidentController", ["$scope", function ($scope) {
+    $scope.DateBrokerAdvisedValidator = function () {
+        return ($scope.Incident.DateIncident && $scope.Incident.DateBrokerAdvised) ?
+            (new Date($scope.Incident.DateIncident) <= new Date($scope.Incident.DateBrokerAdvised)) : true;
+    }
+    $scope.DateTPANotifiedValidator = function () {
+        return ($scope.Incident.DateBrokerAdvised && $scope.Incident.DateTPANotified) ?
+            (new Date($scope.Incident.DateBrokerAdvised) <= new Date($scope.Incident.DateTPANotified)) : true;
+    }
+    $scope.DateIncidentValidator = function () {
+        var valid = true;
+        if ($scope.Incident.DateIncident) {
+            if ($scope.Incident.PolicyInceptionDate) {
+                if (new Date($scope.Incident.DateIncident) < new Date($scope.Incident.PolicyInceptionDate)) valid = false;
+            }
+            if ($scope.Incident.PolicyExpiryDate) {
+                if (new Date($scope.Incident.DateIncident) > new Date($scope.Incident.PolicyExpiryDate)) valid = false;
+            }
+        }
+        return valid;
+    }
+    $scope.PolicyExpiryDateValidator = function () {
+        return ($scope.Incident.PolicyInceptionDate && $scope.Incident.PolicyExpiryDate) ?
+            (new Date($scope.Incident.PolicyInceptionDate) <= new Date($scope.Incident.PolicyExpiryDate)) : true;
+    }
 }]);
 

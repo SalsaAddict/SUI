@@ -2,64 +2,179 @@
     <sui-proc name="apiIncident" type="object" root="Incident" model="Incident" run="once">
         <sui-proc-param name="IncidentId" type="route" required="true" />
     </sui-proc>
-    <sui-proc name="apiIncidentAdministrator" model="Administrators" run="once">
+    <sui-proc name="apiIncidentBroker" model="Brokers" run="once">
+        <sui-proc-param name="IncidentId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiIncidentTPA" model="TPAs" run="once">
         <sui-proc-param name="IncidentId" type="route" />
     </sui-proc>
     <sui-proc name="apiIncidentCoverholder" model="Coverholders" run="once">
         <sui-proc-param name="IncidentId" type="route" />
     </sui-proc>
+    <sui-proc name="apiCountries" model="Countries" run="once" />
+    <sui-proc name="apiIncidentDateBrokerAdvisedSLA" model="IncidentDateBrokerAdvisedSLA" type="singleton" run="auto">
+        <sui-proc-param name="DateIncident" type="scope" value="Incident.DateIncident" required="true" />
+        <sui-proc-param name="DateBrokerAdvised" type="scope" value="Incident.DateBrokerAdvised" required="true" />
+    </sui-proc>
+    <sui-proc name="apiIncidentDateTPANotifiedSLA" model="IncidentDateTPANotifiedSLA" type="singleton" run="auto">
+        <sui-proc-param name="DateBrokerAdvised" type="scope" value="Incident.DateBrokerAdvised" required="true" />
+        <sui-proc-param name="DateTPANotified" type="scope" value="Incident.DateTPANotified" required="true" />
+    </sui-proc>
+    <sui-proc name="apiIncidentStatus" model="Statuses" run="auto">
+        <sui-proc-param name="IncidentId" type="scope" value="Incident.IncidentId" />
+    </sui-proc>
     <sui-proc name="apiGenders" model="Genders" run="once" />
+    <sui-proc name="apiClaimants" model="Claimants" run="auto">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+    </sui-proc>
     <sui-proc name="apiIncidentSave">
         <sui-proc-param name="IncidentId" type="route" />
-        <sui-proc-param name="AdministratorId" type="scope" value="Incident.AdministratorId" />
+        <sui-proc-param name="BrokerId" type="scope" value="Incident.BrokerId" />
+        <sui-proc-param name="DateBrokerAdvised" type="scope" value="Incident.DateBrokerAdvised" />
+        <sui-proc-param name="BrokerContact" type="scope" value="Incident.BrokerContact" />
+        <sui-proc-param name="BrokerPhone" type="scope" value="Incident.BrokerPhone" />
+        <sui-proc-param name="TPAId" type="scope" value="Incident.TPAId" />
+        <sui-proc-param name="DateTPANotified" type="scope" value="Incident.DateTPANotified" />
         <sui-proc-param name="DateIncident" type="scope" value="Incident.DateIncident" />
         <sui-proc-param name="TimeIncident" type="scope" value="Incident.TimeIncident" />
-        <sui-proc-param name="DateReported" type="scope" value="Incident.DateReported" />
         <sui-proc-param name="Description" type="scope" value="Incident.Description" />
-        <sui-proc-param name="PolicyholderForename" type="scope" value="Incident.PolicyholderForename" />
-        <sui-proc-param name="PolicyholderSurname" type="scope" value="Incident.PolicyholderSurname" />
-        <sui-proc-param name="PolicyholderGenderId" type="scope" value="Incident.PolicyholderGenderId" />
-        <sui-proc-param name="PolicyholderDateOfBirth" type="scope" value="Incident.PolicyholderDateOfBirth" />
+        <sui-proc-param name="CountryId" type="scope" value="Incident.CountryId" />
+        <sui-proc-param name="PolicyholderForename" type="scope" value="Incident.Policyholder.Forename" />
+        <sui-proc-param name="PolicyholderSurname" type="scope" value="Incident.Policyholder.Surname" />
+        <sui-proc-param name="PolicyholderGender" type="scope" value="Incident.Policyholder.Gender" />
+        <sui-proc-param name="PolicyholderDateOfBirth" type="scope" value="Incident.Policyholder.DateOfBirth" />
+        <sui-proc-param name="PolicyholderAddress" type="scope" value="Incident.Policyholder.Address" />
+        <sui-proc-param name="PolicyholderPostcode" type="scope" value="Incident.Policyholder.Postcode" />
+        <sui-proc-param name="PolicyholderCountryId" type="scope" value="Incident.Policyholder.CountryId" />
+        <sui-proc-param name="PolicyholderPhone" type="scope" value="Incident.Policyholder.Phone" />
+        <sui-proc-param name="PolicyholderMobile" type="scope" value="Incident.Policyholder.Mobile" />
+        <sui-proc-param name="PolicyholderEmail" type="scope" value="Incident.Policyholder.Email" />
         <sui-proc-param name="CoverholderId" type="scope" value="Incident.CoverholderId" />
-        <sui-proc-param name="PolicyNum" type="scope" value="Incident.PolicyNum" />
+        <sui-proc-param name="PolicyReference" type="scope" value="Incident.PolicyReference" />
         <sui-proc-param name="PolicyInceptionDate" type="scope" value="Incident.PolicyInceptionDate" />
         <sui-proc-param name="PolicyExpiryDate" type="scope" value="Incident.PolicyExpiryDate" />
+        <sui-proc-param name="Status" type="scope" value="Incident.Status.Status" />
     </sui-proc>
-    <sui-form heading="{{Incident.SysNum || 'New Incident'}}" save="apiIncidentSave">
-        <sui-form-content heading="Incident Details">
-            <sui-form-label heading="Third-Party Administrator">
-                <select ng-model="Incident.AdministratorId" ng-options="Administrator.AdministratorId as Administrator.Administrator for Administrator in Administrators" required sui-form-control>
-                    <option value=""></option>
-                </select>
-            </sui-form-label>
+    <sui-form heading="Incident: {{Incident.SysNum || 'New Incident'}}" save="apiIncidentSave" reload="apiIncident">
+        <sui-form-content heading="Incident">
             <sui-form-label heading="Incident Date">
                 <input type="date" ng-model="Incident.DateIncident" required sui-form-control />
+                <sui-validator function="DateIncidentValidator()" message="The incident date must be within the policy period" />
             </sui-form-label>
             <sui-form-label heading="Incident Time">
                 <input type="time" ng-model="Incident.TimeIncident" sui-form-control />
             </sui-form-label>
-            <sui-form-label heading="Date Reported">
-                <input type="date" ng-model="Incident.DateReported" required sui-form-control />
-            </sui-form-label>
-            <sui-form-label heading="Description">
+            <sui-form-label heading="Incident Narrative">
                 <textarea type="text" rows="5" ng-model="Incident.Description" required sui-form-control></textarea>
             </sui-form-label>
+            <sui-form-label heading="Incident Country">
+                <select ng-model="Incident.CountryId" ng-options="Country.Id as Country.Name for Country in Countries" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
         </sui-form-content>
-        <sui-form-content heading="Policyholder Details">
+        <sui-form-content heading="Broker">
+            <sui-form-label heading="Broker">
+                <select ng-model="Incident.BrokerId" ng-options="Broker.BrokerId as Broker.Broker for Broker in Brokers" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date Broker Advised">
+                <div class="input-group">
+                    <input type="date" ng-model="Incident.DateBrokerAdvised" required sui-form-control />
+                    <span class="input-group-addon">
+                        <i class="fa fa-flag {{IncidentDateBrokerAdvisedSLA.Class}}" ng-show="IncidentDateBrokerAdvisedSLA.Class"></i>
+                    </span>
+                </div>
+                <sui-validator function="DateBrokerAdvisedValidator()" message="Cannot be before the incident date" />
+            </sui-form-label>
+            <sui-form-label heading="Broker Contact">
+                <input type="text" ng-model="Incident.BrokerContact" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Broker Telephone">
+                <input type="text" ng-model="Incident.BrokerPhone" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="TPA">
+            <sui-form-label heading="Third-Party Administrator">
+                <select ng-model="Incident.TPAId" ng-options="TPA.TPAId as TPA.TPA for TPA in TPAs" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date TPA Notified">
+                <div class="input-group">
+                    <input type="date" ng-model="Incident.DateTPANotified" required sui-form-control />
+                    <span class="input-group-addon">
+                        <i class="fa fa-flag {{IncidentDateTPANotifiedSLA.Class}}" ng-show="IncidentDateTPANotifiedSLA.Class"></i>
+                    </span>
+                </div>
+                <sui-validator function="DateTPANotifiedValidator()" message="Cannot be before the date broker advised" />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Policyholder Details" ng-if="!routeParam('IncidentId')">
             <sui-form-label heading="Forename">
-                <input type="text" ng-model="Incident.PolicyholderForename" required sui-form-control />
+                <input type="text" ng-model="Incident.Policyholder.Forename" required sui-form-control />
             </sui-form-label>
             <sui-form-label heading="Surname">
-                <input type="text" ng-model="Incident.PolicyholderSurname" required sui-form-control />
+                <input type="text" ng-model="Incident.Policyholder.Surname" required sui-form-control />
             </sui-form-label>
             <sui-form-label heading="Gender">
-                <select ng-model="Incident.GenderId" ng-options="Gender.Id as Gender.Description for Gender in Genders" sui-form-control>
+                <select ng-model="Incident.Policyholder.Gender" ng-options="Gender.Gender as Gender.Description for Gender in Genders" sui-form-control>
                     <option value=""></option>
                 </select>
             </sui-form-label>
             <sui-form-label heading="Date of Birth">
-                <input type="date" ng-model="Incident.DateOfBirth" sui-form-control />
+                <input type="date" ng-model="Incident.Policyholder.DateOfBirth" sui-form-control />
             </sui-form-label>
+            <sui-form-label heading="Address">
+                <textarea type="text" rows="5" ng-model="Incident.Policyholder.Address" sui-form-control></textarea>
+            </sui-form-label>
+            <sui-form-label heading="Postcode">
+                <input type="text" ng-model="Incident.Policyholder.Postcode" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Country of Residence">
+                <select ng-model="Incident.Policyholder.CountryId" ng-options="Country.Id as Country.Name for Country in Countries" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Telephone">
+                <input type="text" ng-model="Incident.Policyholder.Phone" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Mobile">
+                <input type="text" ng-model="Incident.Policyholder.Mobile" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Email">
+                <input type="email" ng-model="Incident.Policyholder.Email" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Claimants" ng-if="routeParam('IncidentId')">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Gender</th>
+                            <th>Date of Birth</th>
+                            <th>Country</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-click="changeRoute('/incident/' + routeParam('IncidentId') + '/claimant')">
+                            <td colspan="4">
+                                <span class="text-primary">
+                                    <i class="fa fa-plus-circle"></i> New Claimant
+                                </span>
+                            </td>
+                        </tr>
+                        <tr ng-repeat="Claimant in Claimants" ng-click="changeRoute('/incident/' + routeParam('IncidentId') + '/claimant/' + Claimant.ClaimantId)">
+                            <td>{{Claimant.Name}}</td>
+                            <td>{{Claimant.Gender}}</td>
+                            <td>{{Claimant.DateOfBirth | date: "shortDate"}}</td>
+                            <td>{{Claimant.Country}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </sui-form-content>
         <sui-form-content heading="Policy Details">
             <sui-form-label heading="Coverholder">
@@ -75,18 +190,30 @@
             </sui-form-label>
             <sui-form-label heading="Policy Expiry Date">
                 <input type="date" ng-model="Incident.PolicyExpiryDate" sui-form-control />
+                <sui-validator function="PolicyExpiryDateValidator()" message="Cannot be before the policy inception date" />
             </sui-form-label>
         </sui-form-content>
-        <sui-form-content heading="Status">
+        <sui-form-content heading="Status" ng-if="routeParam('IncidentId')">
             <sui-form-label heading="Incident Status">
-                <select ng-model="Incident.StatusId" ng-options="Status.Id as Status.Description for Status in Statuses" sui-form-control>
+                <select ng-model="Incident.Status.Status" ng-options="Status.Status as Status.StatusDesc for Status in Statuses" required sui-form-control>
                     <option value=""></option>
                 </select>
             </sui-form-label>
-            <sui-form-label heading="Date Status Changed">
-                <p class="form-control-static">{{Incident.DateStatusUpdatedUTC | date : "shortDate"}}</p>
+            <sui-form-label heading="Date Status Updated">
+                <p class="form-control form-control-static">{{Incident.Status.UpdatedDTO | date : "shortDate"}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Status Updated By">
+                <p class="form-control form-control-static">{{Incident.Status.UpdatedBy}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Date Closed">
+                <p class="form-control form-control-static">{{Incident.Status.DateClosed | date : "shortDate"}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Date First Closed">
+                <p class="form-control form-control-static">{{Incident.Status.DateFirstClosed | date : "shortDate"}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Reopen Count">
+                <p class="form-control form-control-static">{{Incident.Status.ReopenCount | number : 0}}</p>
             </sui-form-label>
         </sui-form-content>
     </sui-form>
 </sui>
-{{Incident}}

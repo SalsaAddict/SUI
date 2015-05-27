@@ -200,7 +200,7 @@ angular.module("sui", [
         templateUrl: "templates/suiForm.html",
         transclude: true,
         replace: true,
-        scope: { heading: "@", backRoute: "@back", deleteProcName: "@delete", saveProcName: "@save" },
+        scope: { heading: "@", subheading: "@", backRoute: "@back", deleteProcName: "@delete", saveProcName: "@save", reloadProcName: "@reload" },
         require: "^^sui",
         controller: ["$scope", function ($scope) {
             var self = this;
@@ -231,7 +231,9 @@ angular.module("sui", [
                                 var params = {};
                                 angular.forEach(data.data[0], function (value, key) { params[key] = value; });
                                 $route.updateParams(params);
+                                if (scope.reloadProcName) controller.execute(scope.reloadProcName);
                             }
+                            scope.form.$setPristine();
                         }
                     });
             }
@@ -285,10 +287,7 @@ angular.module("sui", [
         scope: { heading: "@" },
         require: ["?^^suiForm", "?^^form"],
         controller: ["$scope", function ($scope) {
-            $scope.validatorMessages = [];
-            this.addValidatorMessage = function (name, message) {
-                $scope.validatorMessages.push({ name: name, message: message });
-            }
+            this.setValidatorMessage = function (message) { $scope.validatorMessage = message; }
         }],
         link: function (scope, iElement, iAttrs, controller) {
             scope.showMessages = function () { return !angular.isDefined(iAttrs["nomsg"]); }
@@ -303,14 +302,14 @@ angular.module("sui", [
         templateUrl: "templates/suiValidator.html",
         replace: true,
         transclude: true,
-        scope: { name: "@", fn: "&function", message: "@" },
+        scope: { fn: "&function", message: "@" },
         require: "^^suiFormLabel",
         controller: ["$scope", function ($scope) {
             $scope.value = function () { return ($scope.fn() === true) ? true : null; }
         }],
         link: function (scope, iElement, iAttrs, controller) {
-            controller.addValidatorMessage(scope.name, scope.message);
-            scope.form.model.$validators[scope.name] = function () { return scope.fn(); }
+            controller.setValidatorMessage(scope.message);
+            scope.form.model.$validators.sui = function () { return scope.fn(); }
         }
     }
 }])
@@ -324,6 +323,10 @@ angular.module("sui", [
             if (iAttrs["type"] === "date") {
                 controller[0].$formatters.push(function (modelValue) { return new Date(modelValue); });
                 controller[0].$parsers.push(function (modelValue) { return (modelValue) ? $filter("date")(new Date(modelValue), "yyyy-MM-dd") : null; });
+            }
+            if (iAttrs["type"] === "time") {
+                controller[0].$formatters.push(function (modelValue) { return new Date("1970-01-01 " + modelValue); });
+                controller[0].$parsers.push(function (modelValue) { return (modelValue) ? $filter("date")(new Date(modelValue), "HH:mm") : null; });
             }
             if (iAttrs["suiFormControl"]) {
                 switch (angular.lowercase(iAttrs["suiFormControl"])) {
@@ -376,11 +379,12 @@ angular.module("templates/suiForm.html", []).run(["$templateCache", function ($t
         "<div class=\"panel panel-default form-horizontal\" ng-form=\"form\">" +
         "<div class=\"panel-heading\"><h4><b>{{heading}}</b>" +
         "<span class=\"text-danger\" ng-show=\"hasError()\">&nbsp;<i class=\"fa fa-exclamation-triangle\" title=\"There are errors on this form\"></i></span>" +
+        "<br ng-if=\"subheading\" /><small ng-if=\"subheading\">{{subheading}}</small>" +
         "</h4></div>" +
         "<div class=\"panel-body\"><div class=\"tabpanel\">" +
         "<ul class=\"nav nav-tabs\" ng-if=\"tabbed()\">" +
         "<li ng-repeat=\"tab in tabs\" ng-class=\"{active: tab.active}\">" +
-        "<a href ng-click=\"activateTab(tab)\">{{tab.heading}}" +
+        "<a href class=\"small\" ng-click=\"activateTab(tab)\">{{tab.heading}}" +
         "<span class=\"text-danger\" ng-show=\"tab.hasError()\">&nbsp;<i class=\"fa fa-exclamation-triangle\" title=\"There are errors on this tab\"></i></span>" +
         "</a></li></ul>" +
         "<div class=\"tab-content\" ng-transclude></div>" +
@@ -414,7 +418,7 @@ angular.module("templates/suiFormLabel.html", []).run(["$templateCache", functio
         "<div ng-messages=\"form.$error\" class=\"help-block\" ng-if=\"showMessages()\" ng-show=\"hasError()\">" +
         "<div ng-message=\"required\">This field is required</div>" +
         "<div ng-message=\"email\">This is not a valid email address</div>" +
-        "<div ng-repeat=\"message in validatorMessages\" ng-message=\"{{message.name}}\">{{message.message}}</div>" +
+        "<div ng-message=\"sui\">{{validatorMessage}}</div>" +
         "</div></div></div>");
 }]);
 

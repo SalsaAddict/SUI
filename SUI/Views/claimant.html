@@ -1,0 +1,95 @@
+﻿<sui>
+    <sui-proc name="apiClaimant" model="Claimant" type="object" root="Claimant" run="once">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+        <sui-proc-param name="ClaimantId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiGenders" model="Genders" run="once" />
+    <sui-proc name="apiCountries" model="Countries" run="once" />
+    <sui-proc name="apiClaims" model="Claims" run="once">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+        <sui-proc-param name="ClaimantId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiClaimantSave">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+        <sui-proc-param name="ClaimantId" type="route" />
+        <sui-proc-param name="Forename" type="scope" value="Claimant.Forename" />
+        <sui-proc-param name="Surname" type="scope" value="Claimant.Surname" />
+        <sui-proc-param name="Gender" type="scope" value="Claimant.Gender" />
+        <sui-proc-param name="DateOfBirth" type="scope" value="Claimant.DateOfBirth" />
+        <sui-proc-param name="Address" type="scope" value="Claimant.Address" />
+        <sui-proc-param name="Postcode" type="scope" value="Claimant.Postcode" />
+        <sui-proc-param name="CountryId" type="scope" value="Claimant.CountryId" />
+        <sui-proc-param name="Phone" type="scope" value="Claimant.Phone" />
+        <sui-proc-param name="Mobile" type="scope" value="Claimant.Mobile" />
+        <sui-proc-param name="Email" type="scope" value="Claimant.Email" />
+    </sui-proc>
+    <sui-form heading="Claimant: {{Claimant.Name || 'New Claimant'}}" subheading="Incident: {{Claimant.SysNum}}" back="/incident/{{routeParam('IncidentId')}}" save="apiClaimantSave" reload="apiClaimant">
+        <sui-form-content heading="Claimant Details">
+            <sui-form-label heading="Forename">
+                <input type="text" ng-model="Claimant.Forename" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Surname">
+                <input type="text" ng-model="Claimant.Surname" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Gender">
+                <select ng-model="Claimant.Gender" ng-options="Gender.Gender as Gender.Description for Gender in Genders" sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date of Birth">
+                <input type="date" ng-model="Claimant.DateOfBirth" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Contact Details">
+            <sui-form-label heading="Address">
+                <textarea type="text" rows="5" ng-model="Claimant.Address" sui-form-control></textarea>
+            </sui-form-label>
+            <sui-form-label heading="Postcode">
+                <input type="text" ng-model="Claimant.Postcode" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Country of Residence">
+                <select ng-model="Claimant.CountryId" ng-options="Country.Id as Country.Name for Country in Countries" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Telephone">
+                <input type="text" ng-model="Claimant.Phone" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Mobile">
+                <input type="text" ng-model="Claimant.Mobile" sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Email">
+                <input type="email" ng-model="Claimant.Email" sui-form-control />
+            </sui-form-label>
+        </sui-form-content>
+        <sui-form-content heading="Claims" ng-if="routeParam('ClaimantId')">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Class of Business</th>
+                            <th>Binder UMR</th>
+                            <th>Total Incurred</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-click="changeRoute('/incident/' + routeParam('IncidentId') + '/claimant/' + routeParam('ClaimantId') + '/claim')">
+                            <td colspan="4">
+                                <span class="text-primary">
+                                    <i class="fa fa-plus-circle"></i> New Claim
+                                </span>
+                            </td>
+                        </tr>
+                        <tr ng-repeat="Claim in Claims" ng-click="changeRoute('/incident/' + routeParam('IncidentId') + '/claimant/' + routeParam('ClaimantId') + '/claim/' + Claim.ClaimId)">
+                            <td>{{Claim.Title}}</td>
+                            <td>{{Claim.Class}}</td>
+                            <td>{{Claim.UMR | date: "shortDate"}}</td>
+                            <td>{{Claim.Incurred | currency:'': 2}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </sui-form-content>
+    </sui-form>
+</sui>

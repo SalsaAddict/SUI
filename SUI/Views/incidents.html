@@ -33,9 +33,9 @@
                     </tr>
                     <tr ng-repeat="Incident in Incidents | filter : SearchText" ng-click="changeRoute('/incident/' + Incident.IncidentId)">
                         <td>{{Incident.SysNum}}</td>
-                        <td>{{Incident.Administrator}}</td>
+                        <td>{{Incident.TPA}}</td>
                         <td>{{Incident.Coverholder}}</td>
-                        <td>{{Incident.Policyholder | date : "shortDate"}}</td>
+                        <td>{{Incident.Policyholder}}</td>
                         <td>{{Incident.DateIncident | date : "shortDate"}}</td>
                         <td>{{Incident.Status}}</td>
                     </tr>

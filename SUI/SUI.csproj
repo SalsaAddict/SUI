@@ -113,6 +113,8 @@
     <Content Include="Views\binder.html" />
     <Content Include="Views\binders.html" />
     <Content Include="Views\bindersection.html" />
+    <Content Include="Views\claim.html" />
+    <Content Include="Views\claimant.html" />
     <Content Include="Views\companies.html" />
     <Content Include="Views\company.html" />
     <Content Include="Views\home.html" />

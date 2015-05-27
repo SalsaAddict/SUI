@@ -1,0 +1,32 @@
+﻿<sui>
+    <sui-proc name="apiClaim" model="Claim" type="object" root="Claim" run="once">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+        <sui-proc-param name="ClaimantId" type="route" required="true" />
+        <sui-proc-param name="ClaimId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiClassOfBusiness" model="Classes" run="once" />
+    <sui-proc name="apiClaimBinder" model="Binders" run="auto">
+        <sui-proc-param name="IncidentId" type="route" required="true" />
+        <sui-proc-param name="ClassId" type="scope" value="Claim.ClassId" required="true" />
+    </sui-proc>
+    <sui-form heading="{{Claim.Title || 'New Claim'}}" subheading="Incident: {{Claim.SysNum}}" save="apiClaimSave" reload="apiClaim">
+        <sui-form-content heading="Claim Details">
+            <sui-form-label heading="Claimant">
+                <p class="form-control form-control-static">{{Claim.Claimant}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Section Title">
+                <input type="text" ng-model="Claim.Title" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Class of Business">
+                <select ng-model="Claim.ClassId" ng-options="Class.Id as Class.Description for Class in Classes" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Binder">
+                <select ng-model="Claim.BinderId" ng-options="Binder.BinderId as Binder.Binder for Binder in Binders" sui-form-control ng-disabled="Binders.length == 0">
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+        </sui-form-content>
+    </sui-form>
+</sui>
