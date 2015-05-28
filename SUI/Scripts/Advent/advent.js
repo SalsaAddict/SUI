@@ -5,7 +5,7 @@
         .when("/home", { caseInsensitiveMatch: true, templateUrl: "Views/home.html" })
         .when("/companies", { caseInsensitiveMatch: true, templateUrl: "Views/companies.html" })
         .when("/company/:CompanyId?", { caseInsensitiveMatch: true, templateUrl: "Views/company.html" })
-        .when("/binders", { caseInsensitiveMatch: true, templateUrl: "Views/binders.html" })
+        .when("/binders", { caseInsensitiveMatch: true, templateUrl: "Views/binders.html", controller: "BindersController" })
         .when("/binder/:BinderId?", { caseInsensitiveMatch: true, templateUrl: "Views/binder.html" })
         .when("/binder/:BinderId/section/:SectionId?", { caseInsensitiveMatch: true, templateUrl: "Views/bindersection.html", controller: "BinderSectionController" })
         .when("/incidents", { caseInsensitiveMatch: true, templateUrl: "Views/incidents.html" })
@@ -18,6 +18,62 @@
 .run(["$rootScope", function ($rootScope) {
     $rootScope.navBarCollapsed = true;
     $rootScope.$on("$routeChangeSuccess", function () { $rootScope.navBarCollapsed = true; });
+}])
+
+.service("adventPDF", ["$filter", function ($filter) {
+    var self = this;
+    self.BinderPDF = function (Binder) {
+        var doc = {
+            content: [
+                { style: "heading", text: "Binder Details\n\n" },
+                {
+                    table: {
+                        widths: [150, "*"],
+                        body: [
+                            ["Agreement Number", Binder.Reference],
+                            ["Unique Market Reference", Binder.UMR],
+                            ["Coverholder", Binder.Coverholder],
+                            ["Lloyd's Broker", Binder.Broker],
+                            ["Inception Date", $filter("date")(Binder.InceptionDate, "shortDate")],
+                            ["Expiry Date", $filter("date")(Binder.ExpiryDate, "shortDate")],
+                            ["Risks Located in", Binder.RisksTerritory],
+                            ["Insureds Domiciled in", Binder.DomiciledTerritory],
+                            ["Territorial Limits", Binder.LimitsTerritory]
+                        ]
+                    }
+                }
+            ],
+            styles: { heading: { fontSize: 12, bold: true } },
+            defaultStyle: { fontSize: 9 }
+        };
+        angular.forEach(Binder.Sections, function (SectionData) {
+            doc.content.push({ style: "heading", text: "\n" + SectionData.Title + "\n\n" });
+            doc.content.push({
+                table: {
+                    widths: [150, "*"],
+                    body: [
+                        ["Class of Business", SectionData.Class],
+                        ["TPA", SectionData.TPA]
+                    ]
+                },
+            });
+            doc.content.push("\n");
+            var CarrierTable = { table: { widths: [150, "*", 50], body: [] } };
+            angular.forEach(SectionData.Carriers, function (CarrierData) {
+                CarrierTable.table.body.push(["Carrier", CarrierData.Carrier, $filter("number")(CarrierData.Percentage * 100, 2) + "%"]);
+            });
+            doc.content.push(CarrierTable);
+        });
+        return pdfMake.createPdf(doc);
+    }
+}])
+
+.controller("BindersController", ["$scope", "adventPDF", function ($scope, adventPDF) {
+    $scope.PDF = function (event, BinderId) {
+        $scope.BinderIdForPDF = BinderId;
+        $scope.execute("apiBinderPDF").success(function (data) { adventPDF.BinderPDF($scope.BinderPDF).open(); });
+        event.stopPropagation();
+    }
 }])
 
 .controller("BinderSectionController", ["$scope", function ($scope) {

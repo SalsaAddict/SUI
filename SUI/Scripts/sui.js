@@ -89,7 +89,7 @@ angular.module("sui", [
             var self = this, modalLogin = undefined;
             self.procedures = $scope.procedures = {};
             self.addProcedure = function (name, procedure) { $scope.procedures[name] = procedure; }
-            self.execute = $scope.execute = function (name) {
+            self.execute = $scope.execute = $scope.$parent.execute = function (name) {
                 if ($scope.$parent.loggedIn !== true) { $log.warn("sui:execute:not logged in"); return; }
                 var procedure = $scope.procedures[name], hasRequired = true;
                 var post = { name: procedure.name, parameters: [], type: procedure.type, token: $scope.$parent.$localStorage.token };

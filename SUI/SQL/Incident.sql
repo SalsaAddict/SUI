@@ -671,7 +671,7 @@ BEGIN
 	 LEFT JOIN [Claimant] ph ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
 		JOIN [Binder] b ON i.[CoverholderId] = b.[CoverholderId]
 		JOIN [vwTerritoryCountries] rty ON b.[RisksTerritoryId] = rty.[TerritoryId] AND i.[CountryId] = rty.[CountryId]
-		JOIN [vwTerritoryCountries] dty ON b.[DomiciledTerritoryId] = rty.[TerritoryId] AND ISNULL(ph.[CountryId], i.[CountryId]) = dty.[CountryId]
+		JOIN [vwTerritoryCountries] dty ON b.[DomiciledTerritoryId] = dty.[TerritoryId] AND ISNULL(ph.[CountryId], i.[CountryId]) = dty.[CountryId]
 		JOIN [vwTerritoryCountries] lty ON b.[LimitsTerritoryId] = lty.[TerritoryId] AND i.[CountryId] = lty.[CountryId]
 		JOIN [BinderSection] bs ON b.[Id] = bs.[BinderId] AND @ClassId = bs.[ClassId]
 	WHERE i.[PolicyInceptionDate] BETWEEN b.[InceptionDate] AND b.[ExpiryDate]
