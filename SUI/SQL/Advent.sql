@@ -824,7 +824,7 @@ FROM (VALUES
    ('You Are Successful'),
    ('Zephyr Investments')
   ) cmp ([Name])
-	CROSS APPLY (SELECT TOP 1 [Id] FROM [Country] WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) co ([CountryId])
+	CROSS APPLY (SELECT TOP 1 [Id] FROM [Country] WHERE [Id] IN (N'GB', N'IE', N'US') AND cmp.[Name] IS NOT NULL ORDER BY NEWID()) co ([CountryId])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) lbr ([LBR])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) cov ([COV])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) car ([CAR])

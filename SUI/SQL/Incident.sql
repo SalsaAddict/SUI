@@ -9,6 +9,8 @@ IF OBJECT_ID(N'apiClaimStatus', N'P') IS NOT NULL DROP PROCEDURE [apiClaimStatus
 IF OBJECT_ID(N'apiClaimBinder', N'P') IS NOT NULL DROP PROCEDURE [apiClaimBinder]
 IF OBJECT_ID(N'apiClaim', N'P') IS NOT NULL DROP PROCEDURE [apiClaim]
 IF OBJECT_ID(N'apiClaims', N'P') IS NOT NULL DROP PROCEDURE [apiClaims]
+IF OBJECT_ID(N'ClaimWith', N'U') IS NOT NULL DROP TABLE [ClaimWith]
+IF OBJECT_ID(N'ClaimWithEnum', N'U') IS NOT NULL DROP TABLE [ClaimWithEnum]
 IF OBJECT_ID(N'vwClaimStatusCurrent', N'V') IS NOT NULL DROP VIEW [vwClaimStatusCurrent]
 IF OBJECT_ID(N'ClaimStatus', N'U') IS NOT NULL DROP TABLE [ClaimStatus]
 IF OBJECT_ID(N'Claim', N'U') IS NOT NULL DROP TABLE [Claim]
@@ -580,6 +582,12 @@ FROM cte
 WHERE cte.[Row] = 1
 GO
 
+CREATE TABLE [ClaimWithEnum] (
+  [With] NVARCHAR(25) NOT NULL,
+		CONSTRAINT [PK_ClaimWithEnum] PRIMARY KEY CLUSTERED ([With])
+	)
+GO
+
 CREATE PROCEDURE [apiClaims](@IncidentId INT, @ClaimantId INT, @UserId INT)
 AS
 BEGIN
@@ -605,7 +613,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [apiClaim](@IncidentId INT, @ClaimantId INT, @ClaimId INT = NULL, @UserId INT)
+CREATE PROCEDURE [apiClaim](@IncidentId INT, @ClaimantId INT, @ClaimId INT = NULL, @UserId INT)
 AS
 BEGIN
  SET NOCOUNT ON
@@ -619,6 +627,7 @@ BEGIN
 		[IncidentCountry] = ico.[Name],
 		[Coverholder] = cov.[DisplayName],
 		[PolicyholderCountry] = ISNULL(pco.[Name], ico.[Name]),
+		[PolicyReference] = i.[PolicyReference],
 		[PolicyInceptionDate] = i.[PolicyInceptionDate],
 		[PolicyExpiryDate] = i.[PolicyExpiryDate],
 		[BinderId] = clm.[BinderId],

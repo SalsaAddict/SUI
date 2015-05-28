@@ -78,6 +78,8 @@
     <Content Include="login.ashx" />
     <Content Include="encrypt.ashx" />
     <Content Include="exec.ashx" />
+    <None Include="Properties\PublishProfiles\Eden.pubxml" />
+    <Content Include="Scripts\pdfmake.min.js.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -106,7 +108,9 @@
     <Content Include="Scripts\angular.js" />
     <Content Include="Scripts\angular.min.js" />
     <Content Include="Scripts\ngStorage.min.js" />
+    <Content Include="Scripts\pdfmake.min.js" />
     <Content Include="Scripts\sui.js" />
+    <Content Include="Scripts\vfs_fonts.js" />
     <Content Include="SQL\Advent.sql" />
     <Content Include="SQL\Incident.sql" />
     <Content Include="SQL\Setup.sql" />

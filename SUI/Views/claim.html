@@ -26,7 +26,10 @@
             <sui-form-label heading="Claimant">
                 <p class="form-control form-control-static">{{Claim.Claimant}}</p>
             </sui-form-label>
-            <sui-form-label heading="Section Title">
+            <sui-form-label heading="Policy Reference">
+                <p class="form-control form-control-static">{{Claim.PolicyReference}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Policy Section Title">
                 <input type="text" ng-model="Claim.Title" required sui-form-control />
             </sui-form-label>
             <sui-form-label heading="Class of Business">
@@ -47,6 +50,9 @@
             </sui-form-label>
             <sui-form-label heading="Policy Inception Date">
                 <p class="form-control form-control-static">{{Claim.PolicyInceptionDate | date: "shortDate"}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Policy Expiry Date">
+                <p class="form-control form-control-static">{{Claim.PolicyExpiryDate | date: "shortDate"}}</p>
             </sui-form-label>
             <sui-form-label heading="Binder">
                 <select ng-model="Claim.BinderId" ng-options="Binder.BinderId as Binder.Binder for Binder in Binders" sui-form-control ng-disabled="Binders.length == 0">
