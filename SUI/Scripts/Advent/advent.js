@@ -57,12 +57,20 @@
                     ]
                 },
             });
-            doc.content.push("\n");
-            var CarrierTable = { table: { widths: [150, "*", 50], body: [] } };
-            angular.forEach(SectionData.Carriers, function (CarrierData) {
-                CarrierTable.table.body.push(["Carrier", CarrierData.Carrier, $filter("number")(CarrierData.Percentage * 100, 2) + "%"]);
-            });
-            doc.content.push(CarrierTable);
+            if (angular.isArray(SectionData.Carriers)) {
+                doc.content.push("\n");
+                var CarrierTable = { table: { widths: [150, "*", 50], body: [] } };
+                angular.forEach(SectionData.Carriers, function (CarrierData) {
+                    var Title;
+                    switch (CarrierData.Index) {
+                        case "1": Title = "Lead Carrier"; break;
+                        case "2": Title = "Second Carrier"; break;
+                        default: Title = "Other Carrier"; break;
+                    }
+                    CarrierTable.table.body.push([Title, CarrierData.Carrier, $filter("number")(CarrierData.Percentage * 100, 2) + "%"]);
+                });
+                doc.content.push(CarrierTable);
+            }
         });
         return pdfMake.createPdf(doc);
     }

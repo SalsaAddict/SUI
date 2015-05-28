@@ -352,7 +352,8 @@ VALUES
 	(1, N'UK Only', 1),
 	(2, N'US Only', 1),
 	(3, N'Outside UK', 0),
-	(4, N'Outside US', 0)
+	(4, N'Outside US', 0),
+	(5, N'USA excluding US Virgin Islands, including Canada & Bermuda', 1)
 SET IDENTITY_INSERT [Territory] OFF
 GO
 
@@ -362,7 +363,10 @@ VALUES
  (1, 1, N'GB'),
 	(2, 1, N'US'),
 	(3, 0, N'GB'),
-	(4, 0, N'US')
+	(4, 0, N'US'),
+ (5, 1, N'US'),
+	(5, 1, N'CA'),
+	(5, 1, N'BM')
 GO
 
 CREATE VIEW [vwTerritoryCountries]
@@ -1213,7 +1217,9 @@ VALUES
 	(N'BI', N'Business Interruption'),
 	(N'PROD', N'Product Liability'),
 	(N'PUB', N'Public Liability'),
-	(N'EMP', N'Employers Liability')
+	(N'EMP', N'Employers Liability'),
+	(N'MARIN', N'Marine'),
+	(N'CRIME', N'Crime')
 GO
 
 CREATE PROCEDURE [apiClassOfBusiness](@UserId INT)
@@ -1545,7 +1551,7 @@ END
 GO
 
 
-CREATE PROCEDURE [apiBinderPDF](@UserId INT, @BinderId INT)
+ALTER PROCEDURE [apiBinderPDF](@UserId INT, @BinderId INT)
 AS
 BEGIN
  SET NOCOUNT ON
@@ -1577,7 +1583,7 @@ BEGIN
 							 JOIN [Company] car ON bsc.[CarrierId] = car.[Id]
 							WHERE bsc.[SectionId] = bs.[Id]
 							ORDER BY bsc.[Index]
-							FOR XML PATH (N'Carriers'), TYPE
+							FOR XML PATH (N'Carriers'), ELEMENTS XSINIL, TYPE
 					 ),
 					(
 					  SELECT
@@ -1590,14 +1596,14 @@ BEGIN
 							 JOIN [CompanyType] cart ON cart.[Id] = bse.[ExpertTypeId]
 							WHERE bse.[SectionId] = bs.[Id]
 							ORDER BY car.[DisplayName]
-							FOR XML PATH (N'Experts'), TYPE
+							FOR XML PATH (N'Experts'), ELEMENTS XSINIL, TYPE
 					 )
 				FROM [BinderSection] bs
 				 JOIN [ClassOfBusiness] cob ON bs.[ClassId] = cob.[Id]
 					JOIN [Company] tpa ON bs.[AdministratorId] = tpa.[Id]
 				WHERE bs.[BinderId] = b.[Id]
 				ORDER BY bs.[Title]
-				FOR XML PATH (N'Sections'), TYPE
+				FOR XML PATH (N'Sections'), ELEMENTS XSINIL, TYPE
 		 )
 	FROM [Binder] b
 	 JOIN [Company] cov ON b.[CoverholderId] = cov.[Id]
@@ -1606,7 +1612,7 @@ BEGIN
 		JOIN [Territory] dty ON b.[DomiciledTerritoryId] = dty.[Id]
 		JOIN [Territory] lty ON b.[LimitsTerritoryId] = lty.[Id]
 	WHERE b.[Id] = @BinderId
-	FOR XML PATH (N'Binder')
+	FOR XML PATH (N'Binder'), ELEMENTS XSINIL
 	RETURN
 END
 GO
