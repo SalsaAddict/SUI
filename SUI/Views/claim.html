@@ -9,6 +9,9 @@
         <sui-proc-param name="IncidentId" type="route" required="true" />
         <sui-proc-param name="ClassId" type="scope" value="Claim.ClassId" required="true" />
     </sui-proc>
+    <sui-proc name="apiClaimStatus" model="Statuses" run="auto">
+        <sui-proc-param name="ClaimId" type="scope" value="Claim.ClaimId" required="true" />
+    </sui-proc>
     <sui-proc name="apiClaimSave">
         <sui-proc-param name="IncidentId" type="route" required="true" />
         <sui-proc-param name="ClaimantId" type="route" required="true" />
@@ -16,6 +19,7 @@
         <sui-proc-param name="Title" type="scope" value="Claim.Title" />
         <sui-proc-param name="ClassId" type="scope" value="Claim.ClassId" />
         <sui-proc-param name="BinderId" type="scope" value="Claim.BinderId" />
+        <sui-proc-param name="Status" type="scope" value="Claim.Status.Status" />
     </sui-proc>
     <sui-form heading="{{Claim.Title || 'New Claim'}}" subheading="Incident: {{Claim.SysNum}}" back="/incident/{{routeParam('IncidentId')}}/claimant/{{routeParam('ClaimantId')}}" save="apiClaimSave" reload="apiClaim">
         <sui-form-content heading="Claim Details">
@@ -50,5 +54,32 @@
                 </select>
             </sui-form-label>
         </sui-form-content>
+        <sui-form-content heading="Status" ng-if="routeParam('ClaimId')">
+            <sui-form-label heading="Claim Status">
+                <select ng-model="Claim.Status.Status" ng-options="Status.Status as Status.StatusDesc for Status in Statuses" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Date Status Updated">
+                <div class="input-group">
+                    <p class="form-control form-control-static">{{Claim.Status.UpdatedDTO | date : "shortDate"}}</p>
+                    <span class="input-group-addon">{{Claim.Status.UpdatedDTO | date : "shortTime"}}</span>
+                </div>
+            </sui-form-label>
+            <sui-form-label heading="Status Updated By">
+                <p class="form-control form-control-static">{{Claim.Status.UpdatedBy}}</p>
+            </sui-form-label>
+            <sui-form-label heading="Date First Closed">
+                <div class="input-group">
+                    <p class="form-control form-control-static">{{Claim.Status.DateFirstClosed | date : "shortDate"}}</p>
+                    <span class="input-group-addon">{{Claim.Status.DateFirstClosed | date : "shortTime"}}</span>
+                </div>
+            </sui-form-label>
+            <sui-form-label heading="Reopen Count">
+                <p class="form-control form-control-static">{{Claim.Status.ReopenCount | number : 0}}</p>
+            </sui-form-label>
+        </sui-form-content>
     </sui-form>
 </sui>
+
+

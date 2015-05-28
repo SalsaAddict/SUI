@@ -1,5 +1,5 @@
 --USE [master]; DROP DATABASE [Advent]; CREATE DATABASE [Advent]
-USE [Advent_AMT]
+USE [Advent]
 GO
 
 IF OBJECT_ID(N'apiErrorLog', N'P') IS NOT NULL DROP PROCEDURE [apiErrorLog]

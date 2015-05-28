@@ -1,13 +1,20 @@
+USE [Advent] 
+GO
+
+SET NOCOUNT ON
+GO
+
 IF OBJECT_ID(N'apiClaimSave', N'P') IS NOT NULL DROP PROCEDURE [apiClaimSave]
+IF OBJECT_ID(N'apiClaimStatus', N'P') IS NOT NULL DROP PROCEDURE [apiClaimStatus]
 IF OBJECT_ID(N'apiClaimBinder', N'P') IS NOT NULL DROP PROCEDURE [apiClaimBinder]
 IF OBJECT_ID(N'apiClaim', N'P') IS NOT NULL DROP PROCEDURE [apiClaim]
 IF OBJECT_ID(N'apiClaims', N'P') IS NOT NULL DROP PROCEDURE [apiClaims]
+IF OBJECT_ID(N'vwClaimStatusCurrent', N'V') IS NOT NULL DROP VIEW [vwClaimStatusCurrent]
+IF OBJECT_ID(N'ClaimStatus', N'U') IS NOT NULL DROP TABLE [ClaimStatus]
 IF OBJECT_ID(N'Claim', N'U') IS NOT NULL DROP TABLE [Claim]
 IF OBJECT_ID(N'apiClaimant', N'P') IS NOT NULL DROP PROCEDURE [apiClaimant]
 IF OBJECT_ID(N'apiClaimants', N'P') IS NOT NULL DROP PROCEDURE [apiClaimants]
-IF OBJECT_ID(N'apiIncidentChangeStatus', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentChangeStatus]
 IF OBJECT_ID(N'apiIncidentSave', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentSave]
-IF OBJECT_ID(N'apiIncidentStatus', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentStatus]
 IF OBJECT_ID(N'apiIncidentDateTPANotifiedSLA', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentDateTPANotifiedSLA]
 IF OBJECT_ID(N'apiIncidentDateBrokerAdvisedSLA', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentDateBrokerAdvisedSLA]
 IF OBJECT_ID(N'apiIncidentCoverholder', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentCoverholder]
@@ -82,53 +89,6 @@ CREATE TABLE [Incident] (
 		CONSTRAINT [CK_Incident_PolicyExpiryDate] CHECK ([PolicyExpiryDate] >= [PolicyInceptionDate]),
 		CONSTRAINT [CK_Incident_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
 	)
-GO
-
-CREATE TABLE [IncidentStatus] (
-  [IncidentId] INT NOT NULL,
-		[Index] INT NOT NULL,
-		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
-		[UpdatedById] INT NOT NULL,
-		[Status] BIT NOT NULL,
-		[StatusDesc] AS CASE WHEN [Status] = 0 THEN N'Closed' WHEN [Index] = 0 THEN N'Open' ELSE N'Reopened' END PERSISTED,
-		[PreviousIndex] AS [Index] - 1 PERSISTED,
-		[PreviousUpdateDTO] DATETIMEOFFSET NULL,
-		[PreviousStatus] AS ~[Status] PERSISTED,
-		CONSTRAINT [PK_IncidentStatus] PRIMARY KEY CLUSTERED ([IncidentId], [Index] DESC, [UpdatedDTO] DESC, [Status]),
-		CONSTRAINT [UQ_IncidentStatus_Index] UNIQUE ([IncidentId], [Index] DESC),
-		CONSTRAINT [FK_IncidentStatus_Incident] FOREIGN KEY ([IncidentId]) REFERENCES [Incident] ([Id]),
-		CONSTRAINT [FK_IncidentStatus_IncidentStatus] FOREIGN KEY ([IncidentId], [PreviousIndex], [PreviousUpdateDTO], [PreviousStatus]) REFERENCES [IncidentStatus] ([IncidentId], [Index], [UpdatedDTO], [Status]),
-		CONSTRAINT [CK_IncidentStatus_Index] CHECK ([Index] >= 0),
-		CONSTRAINT [CK_IncidentStatus_Status] CHECK ([Index] > 0 OR [Status] = 1),
-		CONSTRAINT [CK_IncidentStatus_PreviousIndex] CHECK ([PreviousIndex] = -1 OR [PreviousUpdateDTO] IS NOT NULL),
-		CONSTRAINT [CK_IncidentStatus_PreviousUpdateDTO] CHECK ([PreviousUpdateDTO] <= [UpdatedDTO])
-	)
-GO
-
-CREATE VIEW [vwIncidentStatusCurrent]
-AS
-WITH cte AS (
-  SELECT
-		 [IncidentId],
-			[Index],
-			[UpdatedDTO],
-			[UpdatedById],
-			[Status],
-			[StatusDesc],
-			[Row] = ROW_NUMBER() OVER (PARTITION BY [IncidentId] ORDER BY [Index] DESC)
-		FROM [IncidentStatus]
-	)
-SELECT
- [IncidentId] = cte.[IncidentId],
-	[Index] = cte.[Index],
-	[UpdatedDTO] = cte.[UpdatedDTO],
-	[UpdatedById] = cte.[UpdatedById],
-	[UpdatedBy] = u.[Name],
-	[Status] = cte.[Status],
-	[StatusDesc] = cte.[StatusDesc]
-FROM cte
- JOIN [User] u ON cte.[UpdatedById] = u.[Id]
-WHERE cte.[Row] = 1
 GO
 
 CREATE TABLE [Claimant] (
@@ -238,28 +198,6 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiIncidents](@UserId INT)
-AS
-BEGIN
- SET NOCOUNT ON
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-	SELECT
-	 [IncidentId] = i.[Id],
-		[SysNum] = i.[SysNum],
-		[TPA] = tpa.[DisplayName],
-		[Coverholder] = cov.[DisplayName],
-		[Policyholder] = cmt.[Name],
-		[DateIncident] = i.[DateIncident],
-		[Status] = ish.[StatusDesc]
-	FROM [Incident] i
-		JOIN [Company] tpa ON i.[TPAId] = tpa.[Id]
-		LEFT JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
-	 LEFT JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId] AND i.[PolicyholderId] = cmt.[Id]
-		LEFT JOIN [vwIncidentStatusCurrent] ish ON i.[Id] = ish.[IncidentId]
-	ORDER BY i.[DateIncident] DESC
-	RETURN
-END
-GO
 
 CREATE PROCEDURE [apiIncident](@IncidentId INT, @UserId INT)
 AS
@@ -302,26 +240,12 @@ BEGIN
 		[PolicyReference] = i.[PolicyReference],
 		[PolicyInceptionDate] = i.[PolicyInceptionDate],
 		[PolicyExpiryDate] = i.[PolicyExpiryDate],
-		( -- Status
-		  SELECT
-					[Status] = isc.[Status],
-					[UpdatedDTO] = isc.[UpdatedDTO],
-					[UpdatedBy] = isc.[UpdatedBy],
-					[DateFirstClosed] = MIN(CASE WHEN [Status] = 0 THEN [UpdatedDTO] END),
-					[DateClosed] = CASE WHEN isc.[Status] = 0 THEN MIN(CASE WHEN [Status] = 0 THEN [UpdatedDTO] END) END,
-					[ReopenCount] = COUNT(CASE WHEN [Index] > 0 AND [Status] = 1 THEN 1 END)
-				FROM [IncidentStatus] ist
-				WHERE ist.[IncidentId] = i.[Id]
-				GROUP BY ist.[IncidentId]
-				FOR XML PATH (N'Status'), TYPE
-			),
 		-- Tracking
 		[CreatedDTO] = i.[CreatedDTO],
 		[CreatedById] = i.[CreatedById],
 		[UpdatedDTO] = i.[UpdatedDTO],
 		[UpdatedById] = i.[UpdatedById]
 	FROM [Incident] i
-	 JOIN [vwIncidentStatusCurrent] isc ON i.[Id] = isc.[IncidentId]
 	WHERE i.[Id] = @IncidentId
 	FOR XML PATH (N'Incident')
 	RETURN
@@ -413,20 +337,6 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiIncidentStatus](@IncidentId INT = NULL, @UserId INT)
-AS
-BEGIN
- SET NOCOUNT ON
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-	DECLARE @Index INT, @Status BIT
-	SELECT @Index = [Index], @Status = [Status] FROM [vwIncidentStatusCurrent] WHERE [IncidentId] = @IncidentId
-	SELECT [Status] = N'0', [StatusDesc] = N'Closed' UNION ALL
-	SELECT N'1', CASE WHEN ISNULL(@Index, 0) = 0 THEN N'Open' ELSE N'Reopened' END
-	ORDER BY 1 DESC
-	RETURN
-END
-GO
-
 CREATE PROCEDURE [apiIncidentSave](
   @IncidentId INT = NULL,
 		@BrokerId INT = NULL,
@@ -505,9 +415,6 @@ BEGIN
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId
 		SET @IncidentId = SCOPE_IDENTITY()
-		-- Set initial status to "Open"
-		INSERT INTO [IncidentStatus] ([IncidentId], [Index], [UpdatedDTO], [UpdatedById], [Status])
-		VALUES (@IncidentId, 0, GETUTCDATE(), @UserId, 1)
 	END ELSE BEGIN
 	 UPDATE [Incident]
 		SET
@@ -527,18 +434,7 @@ BEGIN
 			[PolicyExpiryDate] = @PolicyExpiryDate,
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId
-		-- Update incident status
-		INSERT INTO [IncidentStatus] ([IncidentId], [Index], [UpdatedDTO], [UpdatedById], [Status], [PreviousUpdateDTO])
-		SELECT
-		 [IncidentId],
-			[Index] = [Index] + 1,
-			[UpdatedDTO] = GETUTCDATE(),
-			[UpdatedById] = @UserId,
-			[Status] = @Status,
-			[PreviousUpdateDTO] = [UpdatedDTO]
-		FROM [vwIncidentStatusCurrent]
-		WHERE [IncidentId] = @IncidentId
-		 AND [Status] <> ISNULL(@Status, [Status])
+		WHERE [Id] = @IncidentId
 	END
 
 	-- Policyholder Details
@@ -637,6 +533,53 @@ CREATE TABLE [Claim] (
 	)
 GO
 
+CREATE TABLE [ClaimStatus] (
+  [ClaimId] INT NOT NULL,
+		[Index] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		[Status] BIT NOT NULL,
+		[StatusDesc] AS CASE WHEN [Status] = 0 THEN N'Closed' WHEN [Index] = 0 THEN N'Open' ELSE N'Reopened' END PERSISTED,
+		[PreviousIndex] AS [Index] - 1 PERSISTED,
+		[PreviousUpdateDTO] DATETIMEOFFSET NULL,
+		[PreviousStatus] AS ~[Status] PERSISTED,
+		CONSTRAINT [PK_ClaimStatus] PRIMARY KEY CLUSTERED ([ClaimId], [Index] DESC, [UpdatedDTO] DESC, [Status]),
+		CONSTRAINT [UQ_ClaimStatus_Index] UNIQUE ([ClaimId], [Index] DESC),
+		CONSTRAINT [FK_ClaimStatus_Claim] FOREIGN KEY ([ClaimId]) REFERENCES [Claim] ([Id]),
+		CONSTRAINT [FK_ClaimStatus_ClaimStatus] FOREIGN KEY ([ClaimId], [PreviousIndex], [PreviousUpdateDTO], [PreviousStatus]) REFERENCES [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [Status]),
+		CONSTRAINT [CK_ClaimStatus_Index] CHECK ([Index] >= 0),
+		CONSTRAINT [CK_ClaimStatus_Status] CHECK ([Index] > 0 OR [Status] = 1),
+		CONSTRAINT [CK_ClaimStatus_PreviousIndex] CHECK ([PreviousIndex] = -1 OR [PreviousUpdateDTO] IS NOT NULL),
+		CONSTRAINT [CK_ClaimStatus_PreviousUpdateDTO] CHECK ([PreviousUpdateDTO] <= [UpdatedDTO])
+	)
+GO
+
+CREATE VIEW [vwClaimStatusCurrent]
+AS
+WITH cte AS (
+  SELECT
+		 [ClaimId],
+			[Index],
+			[UpdatedDTO],
+			[UpdatedById],
+			[Status],
+			[StatusDesc],
+			[Row] = ROW_NUMBER() OVER (PARTITION BY [ClaimId] ORDER BY [Index] DESC)
+		FROM [ClaimStatus]
+	)
+SELECT
+ [ClaimId] = cte.[ClaimId],
+	[Index] = cte.[Index],
+	[UpdatedDTO] = cte.[UpdatedDTO],
+	[UpdatedById] = cte.[UpdatedById],
+	[UpdatedBy] = u.[Name],
+	[Status] = cte.[Status],
+	[StatusDesc] = cte.[StatusDesc]
+FROM cte
+ JOIN [User] u ON cte.[UpdatedById] = u.[Id]
+WHERE cte.[Row] = 1
+GO
+
 CREATE PROCEDURE [apiClaims](@IncidentId INT, @ClaimantId INT, @UserId INT)
 AS
 BEGIN
@@ -647,12 +590,14 @@ BEGIN
 		[Title] = clm.[Title],
 		[Class] = cob.[Description],
 		[UMR] = bin.[UMR],
-		[Incurred] = CONVERT(MONEY, 0)
+		[Incurred] = CONVERT(MONEY, 0),
+		[Status] = csc.[StatusDesc]
 	FROM [Claim] clm
 	 JOIN [Claimant] cmt ON clm.[IncidentId] = cmt.[IncidentId] AND clm.[ClaimantId] = cmt.[Id]
 		JOIN [Incident] i ON cmt.[IncidentId] = i.[Id]
 		JOIN [ClassOfBusiness] cob ON clm.[ClassId] = cob.[Id]
 		LEFT JOIN [Binder] bin ON clm.[BinderId] = bin.[Id]
+		JOIN [vwClaimStatusCurrent] csc ON clm.[Id] = csc.[ClaimId]
 	WHERE clm.[IncidentId] = @IncidentId
 	 AND clm.[ClaimantId] = @ClaimantId
 	ORDER BY [Title]
@@ -660,12 +605,13 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiClaim](@IncidentId INT, @ClaimantId INT, @ClaimId INT = NULL, @UserId INT)
+ALTER PROCEDURE [apiClaim](@IncidentId INT, @ClaimantId INT, @ClaimId INT = NULL, @UserId INT)
 AS
 BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 	SELECT
+	 [ClaimId] = clm.[Id],
 	 [SysNum] = i.[SysNum],
 		[Claimant] = cmt.[Name],
 		[Title] = clm.[Title],
@@ -675,7 +621,19 @@ BEGIN
 		[PolicyholderCountry] = ISNULL(pco.[Name], ico.[Name]),
 		[PolicyInceptionDate] = i.[PolicyInceptionDate],
 		[PolicyExpiryDate] = i.[PolicyExpiryDate],
-		[BinderId] = clm.[BinderId]
+		[BinderId] = clm.[BinderId],
+		( -- Status
+		  SELECT
+					[Status] = csc.[Status],
+					[UpdatedDTO] = csc.[UpdatedDTO],
+					[UpdatedBy] = csc.[UpdatedBy],
+					[DateFirstClosed] = MIN(CASE WHEN [Status] = 0 THEN [UpdatedDTO] END),
+					[ReopenCount] = COUNT(CASE WHEN [Index] > 0 AND [Status] = 1 THEN 1 END)
+				FROM [ClaimStatus]
+				WHERE [ClaimId] = clm.[Id]
+				GROUP BY [ClaimId]
+				FOR XML PATH (N'Status'), TYPE
+			)
 	FROM [Incident] i
 	 JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId]
 		JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
@@ -684,6 +642,7 @@ BEGIN
 		  JOIN [Country] pco ON ph.[CountryId] = pco.[Id]
 		 ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
 		LEFT JOIN [Claim] clm ON cmt.[IncidentId] = clm.[IncidentId] AND cmt.[Id] = clm.[ClaimantId] AND @ClaimId = clm.[Id]
+	 LEFT JOIN [vwClaimStatusCurrent] csc ON clm.[Id] = csc.[ClaimId]
 	WHERE i.[Id] = @IncidentId
 	 AND cmt.[Id] = @ClaimantId
 	FOR XML PATH (N'Claim')
@@ -712,6 +671,20 @@ BEGIN
 END
 GO
 
+CREATE PROCEDURE [apiClaimStatus](@ClaimId INT = NULL, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	DECLARE @Index INT, @Status BIT
+	SELECT @Index = [Index], @Status = [Status] FROM [vwClaimStatusCurrent] WHERE [ClaimId] = @ClaimId
+	SELECT [Status] = N'0', [StatusDesc] = N'Closed' UNION ALL
+	SELECT N'1', CASE WHEN ISNULL(@Index, 0) = 0 THEN N'Open' ELSE N'Reopened' END
+	ORDER BY 1 DESC
+	RETURN
+END
+GO
+
 CREATE PROCEDURE [apiClaimSave](
   @IncidentId INT,
 		@ClaimantId INT,
@@ -719,6 +692,7 @@ CREATE PROCEDURE [apiClaimSave](
 		@Title NVARCHAR(255) = NULL,
 		@ClassId NVARCHAR(5) = NULL,
 		@BinderId INT = NULL,
+		@Status BIT = NULL,
 		@UserId INT
  )
 AS
@@ -747,6 +721,9 @@ BEGIN
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId
 		SET @ClaimId = SCOPE_IDENTITY()
+		-- Set initial status to "Open"
+		INSERT INTO [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [UpdatedById], [Status])
+		VALUES (@ClaimId, 0, GETUTCDATE(), @UserId, 1)
 	END ELSE BEGIN
   UPDATE [Claim]
 		SET
@@ -760,11 +737,55 @@ BEGIN
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId
 		WHERE [Id] = @ClaimId
+		-- Update incident status
+		INSERT INTO [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [UpdatedById], [Status], [PreviousUpdateDTO])
+		SELECT
+		 [ClaimId],
+			[Index] = [Index] + 1,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId,
+			[Status] = @Status,
+			[PreviousUpdateDTO] = [UpdatedDTO]
+		FROM [vwClaimStatusCurrent]
+		WHERE [ClaimId] = @ClaimId
+		 AND [Status] <> ISNULL(@Status, [Status])
 	END
 	SELECT [ClaimId] = @ClaimId
 	RETURN @ClaimId
 END
 GO
+
+CREATE PROCEDURE [apiIncidents](@UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [IncidentId] = i.[Id],
+		[SysNum] = i.[SysNum],
+		[TPA] = tpa.[DisplayName],
+		[Coverholder] = cov.[DisplayName],
+		[Policyholder] = cmt.[Name],
+		[DateIncident] = i.[DateIncident],
+		[Status] = CASE c.[Status] WHEN 1 THEN N'Open' WHEN 0 THEN N'Closed' ELSE N'Incident Only' END
+	FROM [Incident] i
+		JOIN [Company] tpa ON i.[TPAId] = tpa.[Id]
+		LEFT JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
+	 LEFT JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId] AND i.[PolicyholderId] = cmt.[Id]
+		LEFT JOIN (
+		  SELECT
+				 [IncidentId] = clm.[IncidentId],
+					[Status] = CONVERT(BIT, MAX(CONVERT(INT, cst.[Status])))
+				FROM [Claim] clm
+				 JOIN [vwClaimStatusCurrent] cst ON clm.[Id] = cst.[ClaimId]
+				GROUP BY clm.[IncidentId]
+		 ) c ON i.[Id] = c.[IncidentId]
+	ORDER BY i.[DateIncident] DESC
+	RETURN
+END
+GO
+
+
 
 DECLARE @IncidentId INT
 EXEC @IncidentId = [apiIncidentSave]

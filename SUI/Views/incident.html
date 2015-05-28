@@ -20,9 +20,6 @@
         <sui-proc-param name="DateBrokerAdvised" type="scope" value="Incident.DateBrokerAdvised" required="true" />
         <sui-proc-param name="DateTPANotified" type="scope" value="Incident.DateTPANotified" required="true" />
     </sui-proc>
-    <sui-proc name="apiIncidentStatus" model="Statuses" run="auto">
-        <sui-proc-param name="IncidentId" type="scope" value="Incident.IncidentId" />
-    </sui-proc>
     <sui-proc name="apiGenders" model="Genders" run="once" />
     <sui-proc name="apiClaimants" model="Claimants" run="auto">
         <sui-proc-param name="IncidentId" type="route" required="true" />
@@ -53,7 +50,6 @@
         <sui-proc-param name="PolicyReference" type="scope" value="Incident.PolicyReference" />
         <sui-proc-param name="PolicyInceptionDate" type="scope" value="Incident.PolicyInceptionDate" />
         <sui-proc-param name="PolicyExpiryDate" type="scope" value="Incident.PolicyExpiryDate" />
-        <sui-proc-param name="Status" type="scope" value="Incident.Status.Status" />
     </sui-proc>
     <sui-form heading="Incident: {{Incident.SysNum || 'New Incident'}}" save="apiIncidentSave" reload="apiIncident">
         <sui-form-content heading="Incident">
@@ -191,28 +187,6 @@
             <sui-form-label heading="Policy Expiry Date">
                 <input type="date" ng-model="Incident.PolicyExpiryDate" sui-form-control />
                 <sui-validator function="PolicyExpiryDateValidator()" message="Cannot be before the policy inception date" />
-            </sui-form-label>
-        </sui-form-content>
-        <sui-form-content heading="Status" ng-if="routeParam('IncidentId')">
-            <sui-form-label heading="Incident Status">
-                <select ng-model="Incident.Status.Status" ng-options="Status.Status as Status.StatusDesc for Status in Statuses" required sui-form-control>
-                    <option value=""></option>
-                </select>
-            </sui-form-label>
-            <sui-form-label heading="Date Status Updated">
-                <p class="form-control form-control-static">{{Incident.Status.UpdatedDTO | date : "shortDate"}}</p>
-            </sui-form-label>
-            <sui-form-label heading="Status Updated By">
-                <p class="form-control form-control-static">{{Incident.Status.UpdatedBy}}</p>
-            </sui-form-label>
-            <sui-form-label heading="Date Closed">
-                <p class="form-control form-control-static">{{Incident.Status.DateClosed | date : "shortDate"}}</p>
-            </sui-form-label>
-            <sui-form-label heading="Date First Closed">
-                <p class="form-control form-control-static">{{Incident.Status.DateFirstClosed | date : "shortDate"}}</p>
-            </sui-form-label>
-            <sui-form-label heading="Reopen Count">
-                <p class="form-control form-control-static">{{Incident.Status.ReopenCount | number : 0}}</p>
             </sui-form-label>
         </sui-form-content>
     </sui-form>

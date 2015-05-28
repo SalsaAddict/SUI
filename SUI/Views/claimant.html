@@ -71,6 +71,7 @@
                             <th>Class of Business</th>
                             <th>Binder UMR</th>
                             <th>Total Incurred</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,6 +87,7 @@
                             <td>{{Claim.Class}}</td>
                             <td>{{Claim.UMR | date: "shortDate"}}</td>
                             <td>{{Claim.Incurred | currency:'': 2}}</td>
+                            <td>{{Claim.Status}}</td>
                         </tr>
                     </tbody>
                 </table>
