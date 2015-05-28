@@ -1,0 +1,44 @@
+﻿<sui>
+    <sui-proc name="apiLossFunds" model="Funds" run="once" />
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-sm-9">
+                    <h4><b>Loss Funds</b></h4>
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" class="form-control" placeholder="Search&hellip;" ng-model="SearchText" />
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>TPA</th>
+                        <th>Name</th>
+                        <th>Account Number</th>
+                        <th>Currency</th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-click="changeRoute('/lossfund')">
+                        <td colspan="5">
+                            <span class="text-primary">
+                                <i class="fa fa-plus-circle"></i> New Loss Fund
+                            </span>
+                        </td>
+                    </tr>
+                    <tr ng-repeat="Fund in Funds | filter : SearchText" ng-click="changeRoute('/lossfund/' + Fund.LossFundId)">
+                        <td>{{Fund.TPA}}</td>
+                        <td>{{Fund.Name}}</td>
+                        <td>{{Fund.AccountNum}}</td>
+                        <td>{{Fund.Currency}}</td>
+                        <td>{{(Fund.Active === true) ? "Yes" : "No"}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</sui>

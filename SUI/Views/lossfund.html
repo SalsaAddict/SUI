@@ -1,0 +1,48 @@
+﻿<sui>
+    <sui-proc name="apiLossFund" model="Fund" type="singleton" run="once">
+        <sui-proc-param name="LossFundId" type="route" required="true" />
+    </sui-proc>
+    <sui-proc name="apiLossFundTPA" model="TPAs" run="once">
+        <sui-proc-param name="LossFundId" type="route" />
+    </sui-proc>
+    <sui-proc name="apiCurrencies" model="Currencies" run="once" />
+    <sui-proc name="apiLossFundSave">
+        <sui-proc-param name="LossFundId" type="route" />
+        <sui-proc-param name="TPAId" type="scope" value="Fund.TPAId" />
+        <sui-proc-param name="Name" type="scope" value="Fund.Name" />
+        <sui-proc-param name="BankCode" type="scope" value="Fund.BankCode" />
+        <sui-proc-param name="AccountNum" type="scope" value="Fund.AccountNum" />
+        <sui-proc-param name="CurrencyId" type="scope" value="Fund.CurrencyId" />
+        <sui-proc-param name="Active" type="scope" value="Fund.Active" />
+    </sui-proc>
+    <sui-form heading="{{Fund.Name || 'New Loss Fund'}}" back="/lossfunds" save="apiLossFundSave" reload="apiLossFund">
+        <sui-form-content heading="Loss Fund">
+            <sui-form-label heading="Third-Party Administrator">
+                <select ng-model="Fund.TPAId" ng-options="TPA.TPAId as TPA.TPA for TPA in TPAs" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+            <sui-form-label heading="Loss Fund Name">
+                <input type="text" ng-model="Fund.Name" required sui-form-control />
+            </sui-form-label>
+            <div class="form-group">
+                <div class="col-sm-9 col-sm-offset-3">
+                    <div class="checkbox"><label><input type="checkbox" ng-model="Fund.Active" sui-form-control /> Active</label></div>
+                </div>
+            </div>
+        </sui-form-content>
+        <sui-form-content heading="Bank Details">
+            <sui-form-label heading="Bank Code">
+                <input type="text" ng-model="Fund.BankCode" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Account Number">
+                <input type="text" ng-model="Fund.AccountNum" required sui-form-control />
+            </sui-form-label>
+            <sui-form-label heading="Currency">
+                <select ng-model="Fund.CurrencyId" ng-options="Currency.CurrencyId as Currency.Currency for Currency in Currencies" required sui-form-control>
+                    <option value=""></option>
+                </select>
+            </sui-form-label>
+        </sui-form-content>
+    </sui-form>
+</sui>

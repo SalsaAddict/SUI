@@ -37,7 +37,7 @@ GO
 
 CREATE TABLE [LossFund] (
 		[TPAId] INT NOT NULL,
-  [Id] INT NOT NULL,
+  [Id] INT NOT NULL IDENTITY (1, 1),
 		[Name] NVARCHAR(255) NOT NULL,
 		[BankCode] NVARCHAR(50) NOT NULL,
 		[AccountNum] NVARCHAR(50) NOT NULL,
@@ -61,7 +61,6 @@ BEGIN
 	 [LossFundId] = lf.[Id],
 		[TPA] = tpa.[Name],
 		[Name] = lf.[Name],
-		[BankCode] = lf.[BankCode],
 		[AccountNum] = ISNULL(REPLICATE(N'*', LEN(lf.[AccountNum]) - 4), N'') + RIGHT(lf.[AccountNum], 4),
 		[Currency] = cu.[Id],
 		[Active] = lf.[Active]
@@ -98,7 +97,7 @@ BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
  SELECT
-	 [TPAId] = CONVERT(NVARCHAR(10), c.[Id]),
+	 [TPAId] = c.[Id],
 		[TPA] = c.[DisplayName]
 	FROM [Company] c
 	 LEFT JOIN [LossFund] lf ON @LossFundId = lf.[Id] AND c.[Id] = lf.[TPAId]
@@ -116,7 +115,8 @@ CREATE PROCEDURE [apiLossFundSave](
 		@BankCode NVARCHAR(255),
 		@AccountNum NVARCHAR(255),
 		@CurrencyId NCHAR(3),
-		@Active BIT
+		@Active BIT,
+		@UserId INT
  )
 AS
 BEGIN

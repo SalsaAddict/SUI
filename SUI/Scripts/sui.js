@@ -200,7 +200,7 @@ angular.module("sui", [
         templateUrl: "templates/suiForm.html",
         transclude: true,
         replace: true,
-        scope: { heading: "@", subheading: "@", backRoute: "@back", deleteProcName: "@delete", saveProcName: "@save", reloadProcName: "@reload" },
+        scope: { heading: "@", subheading: "@", footer: "@", backRoute: "@back", deleteProcName: "@delete", saveProcName: "@save", reloadProcName: "@reload" },
         require: "^^sui",
         controller: ["$scope", function ($scope) {
             var self = this;
@@ -398,7 +398,7 @@ angular.module("templates/suiForm.html", []).run(["$templateCache", function ($t
         "<div ng-show=\"form.$dirty\">" +
         "<button type=\"button\" class=\"btn btn-warning\" ng-click=\"undo()\"><i class=\"fa fa-undo\"></i> Undo</button>&nbsp;" +
         "<button type=\"button\" class=\"btn\" ng-class=\"{'btn-primary': !hasError(), 'btn-default': hasError()}\" ng-disabled=\"form.$invalid\" ng-click=\"save()\"><i class=\"fa fa-save\"></i> Save</button>" +
-        "</div></div></div></div>");
+        "</div></div><h5><i>{{footer}}</i></h5></div></div>");
 }]);
 
 angular.module("templates/suiFormContent.html", []).run(["$templateCache", function ($templateCache) {

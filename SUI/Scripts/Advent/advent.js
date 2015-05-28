@@ -5,6 +5,8 @@
         .when("/home", { caseInsensitiveMatch: true, templateUrl: "Views/home.html" })
         .when("/companies", { caseInsensitiveMatch: true, templateUrl: "Views/companies.html" })
         .when("/company/:CompanyId?", { caseInsensitiveMatch: true, templateUrl: "Views/company.html" })
+        .when("/lossfunds", { caseInsensitiveMatch: true, templateUrl: "Views/lossfunds.html" })
+        .when("/lossfund/:LossFundId?", { caseInsensitiveMatch: true, templateUrl: "Views/lossfund.html" })
         .when("/binders", { caseInsensitiveMatch: true, templateUrl: "Views/binders.html", controller: "BindersController" })
         .when("/binder/:BinderId?", { caseInsensitiveMatch: true, templateUrl: "Views/binder.html" })
         .when("/binder/:BinderId/section/:SectionId?", { caseInsensitiveMatch: true, templateUrl: "Views/bindersection.html", controller: "BinderSectionController" })

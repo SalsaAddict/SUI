@@ -66,6 +66,8 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\bootstrap-theme.min.css" />
+    <Content Include="Content\bootstrap.min.css" />
     <Content Include="Scripts\angular-locale_en-gb.js" />
     <Content Include="Scripts\angular.min.js.map" />
     <Content Include="packages.config" />
@@ -124,6 +126,8 @@
     <Content Include="Views\home.html" />
     <Content Include="Views\incident.html" />
     <Content Include="Views\incidents.html" />
+    <Content Include="Views\lossfund.html" />
+    <Content Include="Views\lossfunds.html" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
