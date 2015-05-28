@@ -584,7 +584,34 @@ GO
 
 CREATE TABLE [ClaimWithEnum] (
   [With] NVARCHAR(25) NOT NULL,
-		CONSTRAINT [PK_ClaimWithEnum] PRIMARY KEY CLUSTERED ([With])
+		[SortOrder] TINYINT NOT NULL,
+		CONSTRAINT [PK_ClaimWithEnum] PRIMARY KEY NONCLUSTERED ([With]),
+		CONSTRAINT [UQ_ClaimWithEnum_SortOrder] UNIQUE ([SortOrder])
+	)
+GO
+
+INSERT INTO [ClaimWithEnum] ([With], [SortOrder])
+VALUES
+ (N'Broker', 1),
+	(N'Bureau Leader', 2),
+	(N'Further Agreement Party', 3),
+	(N'XCS', 4)
+GO
+
+CREATE TABLE [ClaimWith] (
+  [ClaimId] INT NOT NULL,
+		[Index] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		[With] NVARCHAR(25) NOT NULL,
+		[PreviousIndex] AS [Index] - 1 PERSISTED,
+		[PreviousUpdateDTO] DATETIMEOFFSET NULL,
+		[PreviousWith] NVARCHAR(25) NULL,
+		CONSTRAINT [PK_ClaimWith] PRIMARY KEY CLUSTERED ([ClaimId], [Index] DESC, [UpdatedDTO] DESC),
+		CONSTRAINT [UQ_ClaimWith_Index] UNIQUE ([ClaimId], [Index] DESC),
+		CONSTRAINT [CK_ClaimWith_Index] CHECK ([Index] >= 0),
+		CONSTRAINT [CK_ClaimWith_PreviousUpdateDTO] CHECK ([Index] = 0 OR [PreviousUpdateDTO] IS NOT NULL),
+		CONSTRAINT [CK_ClaimWith_PreviousWith] CHECK ([Index] = 0 OR [PreviousWith] IS NOT NULL)
 	)
 GO
 
@@ -794,7 +821,7 @@ BEGIN
 END
 GO
 
-
+/*
 
 DECLARE @IncidentId INT
 EXEC @IncidentId = [apiIncidentSave]
@@ -807,3 +834,4 @@ EXEC @IncidentId = [apiIncidentSave]
 EXEC [apiIncident] @IncidentId, 1
 
 EXEC [apiClaimBinder] 1, N'EMP', 1
+*/

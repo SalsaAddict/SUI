@@ -425,6 +425,7 @@ CREATE TABLE [Company] (
 	)
 GO
 
+/*
 -- ##TESTDATA
 INSERT INTO [Company] ([Name], [CountryId], [LBR], [COV], [CAR], [TPA], [RBR], [CreatedById], [UpdatedById])
 SELECT [Name], [CountryId], [LBR], [COV], [CAR], [TPA], [RBR], 1, 1
@@ -831,6 +832,7 @@ FROM (VALUES
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) tpa ([TPA])
 	CROSS APPLY (SELECT TOP 1 [Bit] FROM (VALUES (0), (1)) b ([Bit]) WHERE cmp.[Name] IS NOT NULL ORDER BY NEWID()) rbr ([RBR])
 GO
+*/
 
 CREATE TABLE [CompanyRole] (
   [Id] NCHAR(3) NOT NULL,
@@ -1029,6 +1031,7 @@ CREATE TABLE [Binder] (
 	)
 GO
 
+/*
 -- ##TESTDATA
 INSERT INTO [Binder] ([UMR], [Reference], [BrokerId], [CoverholderId], [InceptionDate], [ExpiryDate], [RisksTerritoryId], [DomiciledTerritoryId], [LimitsTerritoryId], [CreatedById], [UpdatedById])
 SELECT
@@ -1050,6 +1053,7 @@ FROM [master]..[spt_values] v
 WHERE v.[type] = N'P'
  AND v.[number] BETWEEN 1 AND 500
 GO
+*/
 
 CREATE PROCEDURE [apiBinder](@UserId INT, @BinderId INT)
 AS
@@ -1243,6 +1247,7 @@ CREATE TABLE [BinderSection] (
 	)
 GO
 
+/*
 -- ##TESTDATA
 INSERT INTO [BinderSection] ([BinderId], [ClassId], [Title], [AdministratorId], [CreatedById], [UpdatedById])
 SELECT
@@ -1258,6 +1263,7 @@ FROM [Binder] b
  CROSS APPLY (SELECT TOP 1 [number] FROM [master]..[spt_values] WHERE [type] = N'P' AND [number] BETWEEN 1 AND cobc.[Count] AND ISNULL(b.[Id], cob.[Id]) IS NOT NULL ORDER BY NEWID()) s ([Count])
 WHERE cob.[Row] <= s.[Count]
 GO
+*/
 
 CREATE TABLE [BinderSectionCarrier] (
   [SectionId] INT NOT NULL,
@@ -1272,6 +1278,7 @@ CREATE TABLE [BinderSectionCarrier] (
 	)
 GO
 
+/*
 -- ##TESTDATA
 INSERT INTO [BinderSectionCarrier] ([SectionId], [CarrierId], [Index], [Percentage])
 SELECT
@@ -1281,6 +1288,7 @@ SELECT
 	[Percentage] = 1
 FROM [BinderSection] bs
 GO
+*/
 
 CREATE TABLE [BinderSectionExpert] (
   [SectionId] INT NOT NULL,
