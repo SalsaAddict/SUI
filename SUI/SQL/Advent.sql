@@ -1551,7 +1551,7 @@ END
 GO
 
 
-ALTER PROCEDURE [apiBinderPDF](@UserId INT, @BinderId INT)
+CREATE PROCEDURE [apiBinderPDF](@UserId INT, @BinderId INT)
 AS
 BEGIN
  SET NOCOUNT ON
