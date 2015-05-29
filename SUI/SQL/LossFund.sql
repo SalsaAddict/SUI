@@ -43,12 +43,17 @@ CREATE TABLE [LossFund] (
 		[AccountNum] NVARCHAR(50) NOT NULL,
 		[CurrencyId] NCHAR(3) NOT NULL,
 		[Active] BIT NOT NULL CONSTRAINT [DF_LossFund_Active] DEFAULT (1),
+		[CreatedDTO] DATETIMEOFFSET NOT NULL,
+		[CreatedById] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
 		CONSTRAINT [PK_LossFund] PRIMARY KEY CLUSTERED ([TPAId], [Id]),
 		CONSTRAINT [UQ_LossFund_Id] UNIQUE ([Id]),
 		CONSTRAINT [UQ_LossFund_Name] UNIQUE ([TPAId], [Name]),
 		CONSTRAINT [UQ_LossFund_Account] UNIQUE ([TPAId], [BankCode], [AccountNum], [CurrencyId]),
 		CONSTRAINT [FK_LossFund_Company] FOREIGN KEY ([TPAId]) REFERENCES [Company] ([Id]),
-		CONSTRAINT [FK_LossFund_Currency] FOREIGN KEY ([CurrencyId]) REFERENCES [Currency] ([Id])
+		CONSTRAINT [FK_LossFund_Currency] FOREIGN KEY ([CurrencyId]) REFERENCES [Currency] ([Id]),
+		CONSTRAINT [CK_LossFund_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
 	)
 GO
 
@@ -122,14 +127,29 @@ AS
 BEGIN
  SET NOCOUNT ON
 	IF @LossFundId IS NULL BEGIN
-	 INSERT INTO [LossFund] ([TPAId], [Name], [BankCode], [AccountNum], [CurrencyId], [Active])
+	 INSERT INTO [LossFund] (
+		  [TPAId],
+				[Name],
+				[BankCode],
+				[AccountNum],
+				[CurrencyId],
+				[Active],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
+			)
 		SELECT
 		 [TPAId] = @TPAId,
 			[Name] = @Name,
 			[BankCode] = @BankCode,
 			[AccountNum] = @AccountNum,
 			[CurrencyId] = @CurrencyId,
-			[Active] = @Active
+			[Active] = @Active,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
 		SET @LossFundId = SCOPE_IDENTITY()
 	END ELSE BEGIN
 	 UPDATE [LossFund]
@@ -139,10 +159,15 @@ BEGIN
 			[BankCode] = @BankCode,
 			[AccountNum] = @AccountNum,
 			[CurrencyId] = @CurrencyId,
-			[Active] = @Active
+			[Active] = @Active,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
 		WHERE [Id] = @LossFundId
 	END
 	SELECT [LossFundId] = @LossFundId
 	RETURN
 	END
 GO
+
+--CREATE TABLE [BinderSectionLossFund](
+  --[BinderId] INT NOT NULL,
