@@ -4,25 +4,49 @@ GO
 SET NOCOUNT ON
 GO
 
+IF OBJECT_ID(N'apiClaimSave', N'P') IS NOT NULL DROP PROCEDURE [apiClaimSave]
+IF OBJECT_ID(N'apiClaimStatus', N'P') IS NOT NULL DROP PROCEDURE [apiClaimStatus]
+IF OBJECT_ID(N'apiClaimBinder', N'P') IS NOT NULL DROP PROCEDURE [apiClaimBinder]
+IF OBJECT_ID(N'apiClaim', N'P') IS NOT NULL DROP PROCEDURE [apiClaim]
+IF OBJECT_ID(N'apiClaims', N'P') IS NOT NULL DROP PROCEDURE [apiClaims]
+IF OBJECT_ID(N'ClaimWith', N'U') IS NOT NULL DROP TABLE [ClaimWith]
+IF OBJECT_ID(N'ClaimWithEnum', N'U') IS NOT NULL DROP TABLE [ClaimWithEnum]
+IF OBJECT_ID(N'vwClaimStatusCurrent', N'V') IS NOT NULL DROP VIEW [vwClaimStatusCurrent]
+IF OBJECT_ID(N'ClaimStatus', N'U') IS NOT NULL DROP TABLE [ClaimStatus]
+IF OBJECT_ID(N'Claim', N'U') IS NOT NULL DROP TABLE [Claim]
+IF OBJECT_ID(N'apiClaimant', N'P') IS NOT NULL DROP PROCEDURE [apiClaimant]
+IF OBJECT_ID(N'apiClaimants', N'P') IS NOT NULL DROP PROCEDURE [apiClaimants]
 IF OBJECT_ID(N'apiIncidentSave', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentSave]
+IF OBJECT_ID(N'apiIncidentDateTPANotifiedSLA', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentDateTPANotifiedSLA]
+IF OBJECT_ID(N'apiIncidentDateBrokerAdvisedSLA', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentDateBrokerAdvisedSLA]
 IF OBJECT_ID(N'apiIncidentCoverholder', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentCoverholder]
-IF OBJECT_ID(N'apiIncidentAdministrator', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentAdministrator]
+IF OBJECT_ID(N'apiIncidentTPA', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentTPA]
+IF OBJECT_ID(N'apiIncidentBroker', N'P') IS NOT NULL DROP PROCEDURE [apiIncidentBroker]
 IF OBJECT_ID(N'apiIncident', N'P') IS NOT NULL DROP PROCEDURE [apiIncident]
 IF OBJECT_ID(N'apiIncidents', N'P') IS NOT NULL DROP PROCEDURE [apiIncidents]
 IF EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = N'FK_Incident_Claimant_PolicyholderId') ALTER TABLE [Incident] DROP CONSTRAINT [FK_Incident_Claimant_PolicyholderId]
+IF OBJECT_ID(N'apiClaimantSave', N'P') IS NOT NULL DROP PROCEDURE [apiClaimantSave]
 IF OBJECT_ID(N'Claimant', N'U') IS NOT NULL DROP TABLE [Claimant]
 IF OBJECT_ID(N'vwIncidentStatusCurrent', N'V') IS NOT NULL DROP VIEW [vwIncidentStatusCurrent]
-IF OBJECT_ID(N'IncidentStatusHistory', N'U') IS NOT NULL DROP TABLE [IncidentStatusHistory]
 IF OBJECT_ID(N'IncidentStatus', N'U') IS NOT NULL DROP TABLE [IncidentStatus]
 IF OBJECT_ID(N'Incident', N'U') IS NOT NULL DROP TABLE [Incident]
 IF OBJECT_ID(N'apiGenders', N'P') IS NOT NULL DROP PROCEDURE [apiGenders]
-IF OBJECT_ID(N'Gender', N'U') IS NOT NULL DROP TABLE [Gender]
+IF OBJECT_ID(N'GenderEnum', N'U') IS NOT NULL DROP TABLE [GenderEnum]
 IF OBJECT_ID(N'apiBinderPDF', N'P') IS NOT NULL DROP PROCEDURE [apiBinderPDF]
 IF OBJECT_ID(N'apiBinders', N'P') IS NOT NULL DROP PROCEDURE [apiBinders]
 IF OBJECT_ID(N'apiBinderSectionSave', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionSave]
+IF OBJECT_ID(N'BinderSectionLossFund', N'U') IS NOT NULL DROP TABLE [BinderSectionLossFund]
+IF OBJECT_ID(N'apiLossFundSave', N'P') IS NOT NULL DROP PROCEDURE [apiLossFundSave]
+IF OBJECT_ID(N'apiLossFundTPA', N'P') IS NOT NULL DROP PROCEDURE [apiLossFundTPA]
+IF OBJECT_ID(N'apiLossFund', N'P') IS NOT NULL DROP PROCEDURE [apiLossFund]
+IF OBJECT_ID(N'apiLossFunds', N'P') IS NOT NULL DROP PROCEDURE [apiLossFunds]
+IF OBJECT_ID(N'LossFund', N'U') IS NOT NULL DROP TABLE [LossFund]
+IF OBJECT_ID(N'apiCurrencies', N'P') IS NOT NULL DROP PROCEDURE [apiCurrencies]
+IF OBJECT_ID(N'Currency', N'U') IS NOT NULL DROP TABLE [Currency]
+IF OBJECT_ID(N'apiBinderSectionLossFund', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionLossFund]
 IF OBJECT_ID(N'apiBinderSectionCarrier', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionCarrier]
 IF OBJECT_ID(N'apiBinderSectionExpert', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionExpert]
-IF OBJECT_ID(N'apiBinderSectionAdministrator', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionAdministrator]
+IF OBJECT_ID(N'apiBinderSectionTPA', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSectionTPA]
 IF OBJECT_ID(N'apiBinderSection', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSection]
 IF OBJECT_ID(N'apiBinderSections', N'P') IS NOT NULL DROP PROCEDURE [apiBinderSections]
 IF OBJECT_ID(N'BinderSectionCarrier', N'U') IS NOT NULL DROP TABLE [BinderSectionCarrier]
@@ -1237,16 +1261,18 @@ CREATE TABLE [BinderSection] (
   [BinderId] INT NOT NULL,
 		[ClassId] NVARCHAR(5) NOT NULL,
 		[Title] NVARCHAR(255) NOT NULL,
-		[AdministratorId] INT NOT NULL,
+		[TPAId] INT NOT NULL,
+		[LossFundId] INT NULL, -- ##TODO
 		[CreatedDTO] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_BinderSection_CreatedDTO] DEFAULT (GETUTCDATE()),
 		[CreatedById] INT NOT NULL,
 		[UpdatedDTO] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_BinderSection_UpdatedDTO] DEFAULT (GETUTCDATE()),
 		[UpdatedById] INT NOT NULL,
 		CONSTRAINT [PK_BinderSection] PRIMARY KEY NONCLUSTERED ([Id]),
+		CONSTRAINT [PK_BinderSection_TPAId] UNIQUE ([Id], [TPAId]),
 		CONSTRAINT [UQ_BinderSection_Title] UNIQUE CLUSTERED ([BinderId], [Title]),
 		CONSTRAINT [FK_BinderSection_Binder] FOREIGN KEY ([BinderId]) REFERENCES [Binder] ([Id]) ON DELETE CASCADE,
 		CONSTRAINT [FK_BinderSection_ClassOfBusiness] FOREIGN KEY ([ClassId]) REFERENCES [ClassOfBusiness] ([Id]) ON UPDATE CASCADE,
-		CONSTRAINT [FK_BinderSection_Company_AdministratorId] FOREIGN KEY ([AdministratorId]) REFERENCES [Company] ([Id]),
+		CONSTRAINT [FK_BinderSection_Company_TPAId] FOREIGN KEY ([TPAId]) REFERENCES [Company] ([Id]),
 		CONSTRAINT [FK_BinderSection_User_CreatedById] FOREIGN KEY ([CreatedById]) REFERENCES [User] ([Id]),
 		CONSTRAINT [FK_BinderSection_User_UpdatedById] FOREIGN KEY ([UpdatedById]) REFERENCES [User] ([Id]),
 		CONSTRAINT [CK_BinderSection_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
@@ -1255,12 +1281,12 @@ GO
 
 /*
 -- ##TESTDATA
-INSERT INTO [BinderSection] ([BinderId], [ClassId], [Title], [AdministratorId], [CreatedById], [UpdatedById])
+INSERT INTO [BinderSection] ([BinderId], [ClassId], [Title], [TPAId], [CreatedById], [UpdatedById])
 SELECT
  [BinderId] = b.[Id],
 	[ClassId] = cob.[Id],
 	[Title] = cob.[Description],
-	[AdministratorId] = (SELECT TOP 1 [Id] FROM [Company] WHERE [TPA] = 1 AND ISNULL(b.[Id], cob.[Id]) IS NOT NULL ORDER BY NEWID()),
+	[TPAId] = (SELECT TOP 1 [Id] FROM [Company] WHERE [TPA] = 1 AND ISNULL(b.[Id], cob.[Id]) IS NOT NULL ORDER BY NEWID()),
 	[CreatedById] = 1,
 	[UpdatedById] = 1
 FROM [Binder] b
@@ -1296,6 +1322,183 @@ FROM [BinderSection] bs
 GO
 */
 
+
+CREATE TABLE [Currency] (
+  [Id] NCHAR(3) NOT NULL,
+		[Name] NVARCHAR(255) NOT NULL,
+		CONSTRAINT [PK_Currency] PRIMARY KEY NONCLUSTERED ([Id]),
+		CONSTRAINT [UQ_Currency_Name] UNIQUE CLUSTERED ([Name])
+	)
+GO
+
+INSERT INTO [Currency] ([Id], [Name])
+VALUES
+ (N'GBP', N'British Pounds'),
+	(N'EUR', N'Euros'),
+	(N'USD', N'US Dollars')
+GO
+
+CREATE PROCEDURE [apiCurrencies](@UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT [CurrencyId] = [Id], [Currency] = [Name] FROM [Currency] ORDER BY 2
+	RETURN
+END
+GO
+
+CREATE TABLE [LossFund] (
+		[TPAId] INT NOT NULL,
+  [Id] INT NOT NULL IDENTITY (1, 1),
+		[Name] NVARCHAR(255) NOT NULL,
+		[BankCode] NVARCHAR(50) NOT NULL,
+		[AccountNum] NVARCHAR(50) NOT NULL,
+		[CurrencyId] NCHAR(3) NOT NULL,
+		[Active] BIT NOT NULL CONSTRAINT [DF_LossFund_Active] DEFAULT (1),
+		[CreatedDTO] DATETIMEOFFSET NOT NULL,
+		[CreatedById] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		CONSTRAINT [PK_LossFund] PRIMARY KEY CLUSTERED ([TPAId], [Id]),
+		CONSTRAINT [UQ_LossFund_Id] UNIQUE ([Id]),
+		CONSTRAINT [UQ_LossFund_BinderSectionLossFund] UNIQUE ([Id], [TPAId], [CurrencyId], [Active]),
+		CONSTRAINT [UQ_LossFund_Name] UNIQUE ([TPAId], [Name]),
+		CONSTRAINT [UQ_LossFund_Account] UNIQUE ([TPAId], [BankCode], [AccountNum], [CurrencyId]),
+		CONSTRAINT [FK_LossFund_Company] FOREIGN KEY ([TPAId]) REFERENCES [Company] ([Id]),
+		CONSTRAINT [FK_LossFund_Currency] FOREIGN KEY ([CurrencyId]) REFERENCES [Currency] ([Id]),
+		CONSTRAINT [CK_LossFund_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
+	)
+GO
+
+CREATE PROCEDURE [apiLossFunds](@UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [LossFundId] = lf.[Id],
+		[TPA] = tpa.[Name],
+		[Name] = lf.[Name],
+		[AccountNum] = ISNULL(REPLICATE(N'*', LEN(lf.[AccountNum]) - 4), N'') + RIGHT(lf.[AccountNum], 4),
+		[Currency] = cu.[Id],
+		[Active] = lf.[Active]
+	FROM [LossFund] lf
+	 JOIN [Company] tpa ON lf.[TPAId] = tpa.[Id]
+	 JOIN [Currency] cu ON lf.[CurrencyId] = cu.[Id]
+	ORDER BY tpa.[Name], lf.[Name]
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiLossFund](@LossFundId INT, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [LossFundId] = [Id],
+		[TPAId],
+		[Name],
+		[BankCode],
+		[AccountNum],
+		[CurrencyId],
+		[Active]
+	FROM [LossFund]
+	WHERE [Id] = @LossFundId
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiLossFundTPA](@LossFundId INT = NULL, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+ SELECT
+	 [TPAId] = c.[Id],
+		[TPA] = c.[DisplayName]
+	FROM [Company] c
+	 LEFT JOIN [LossFund] lf ON @LossFundId = lf.[Id] AND c.[Id] = lf.[TPAId]
+	WHERE c.[TPA] & c.[Active] = 1
+	 OR lf.[Id] IS NOT NULL
+	ORDER BY c.[DisplayName]
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiLossFundSave](
+  @LossFundId INT = NULL,
+  @TPAId INT,
+		@Name NVARCHAR(255),
+		@BankCode NVARCHAR(255),
+		@AccountNum NVARCHAR(255),
+		@CurrencyId NCHAR(3),
+		@Active BIT,
+		@UserId INT
+ )
+AS
+BEGIN
+ SET NOCOUNT ON
+	IF @LossFundId IS NULL BEGIN
+	 INSERT INTO [LossFund] (
+		  [TPAId],
+				[Name],
+				[BankCode],
+				[AccountNum],
+				[CurrencyId],
+				[Active],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
+			)
+		SELECT
+		 [TPAId] = @TPAId,
+			[Name] = @Name,
+			[BankCode] = @BankCode,
+			[AccountNum] = @AccountNum,
+			[CurrencyId] = @CurrencyId,
+			[Active] = @Active,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		SET @LossFundId = SCOPE_IDENTITY()
+	END ELSE BEGIN
+	 UPDATE [LossFund]
+		SET
+		 [TPAId] = @TPAId,
+			[Name] = @Name,
+			[BankCode] = @BankCode,
+			[AccountNum] = @AccountNum,
+			[CurrencyId] = @CurrencyId,
+			[Active] = @Active,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		WHERE [Id] = @LossFundId
+	END
+	SELECT [LossFundId] = @LossFundId
+	RETURN
+	END
+GO
+
+CREATE TABLE [BinderSectionLossFund](
+  [SectionId] INT NOT NULL,
+		[TPAId] INT NOT NULL,
+		[LossFundId] INT NOT NULL,
+		[CurrencyId] NCHAR(3) NOT NULL,
+		[ActiveLossFund] BIT NOT NULL,
+		[ActiveForSection] BIT NOT NULL,
+		[Active] AS [ActiveLossFund] & [ActiveForSection] PERSISTED,
+		CONSTRAINT [PK_BinderSectionLossFund] PRIMARY KEY CLUSTERED ([SectionId], [LossFundId]),
+		CONSTRAINT [UQ_BinderSectionLossFund_CurrencyId] UNIQUE ([SectionId], [CurrencyId]),
+		CONSTRAINT [FK_BinderSectionLossFund_BinderSection] FOREIGN KEY ([SectionId], [TPAId]) REFERENCES [BinderSection] ([Id], [TPAId]) ON UPDATE CASCADE,
+		CONSTRAINT [FK_BinderSectionLossFund_LossFund] FOREIGN KEY ([LossFundId], [TPAId], [CurrencyId], [ActiveLossFund]) REFERENCES [LossFund] ([Id], [TPAId], [CurrencyId], [Active]) ON UPDATE CASCADE
+	)
+GO
+
+
 CREATE TABLE [BinderSectionExpert] (
   [SectionId] INT NOT NULL,
 		[ExpertId] INT NOT NULL,
@@ -1330,7 +1533,7 @@ BEGIN
 				WHERE bs.[Id] = bsc.[SectionId]
 				ORDER BY bsc.[Index]
 		 ) lc
-		LEFT JOIN [Company] tpa ON bs.[AdministratorId] = tpa.[Id]
+		LEFT JOIN [Company] tpa ON bs.[TPAId] = tpa.[Id]
 	WHERE b.[Id] = @BinderId
 	ORDER BY bs.[Title]
 	RETURN
@@ -1348,7 +1551,8 @@ BEGIN
 		[BinderId] = bs.[BinderId],
 		[ClassId] = bs.[ClassId],
 		[Title] = bs.[Title],
-		[AdministratorId] = bs.[AdministratorId],
+		[TPAId] = bs.[TPAId],
+		[LossFundId] = bs.[LossFundId],
 		(
 		  SELECT
 				 [@json:Array] = N'true',
@@ -1359,6 +1563,16 @@ BEGIN
 				ORDER BY bsc.[Index]
 				FOR XML PATH (N'Carriers'), TYPE
 		 ),
+		(
+		  SELECT
+				 [@json:Array] = N'true',
+					[LossFundId],
+					[ActiveLossFund],
+					[ActiveForSection]
+				FROM [BinderSectionLossFund]
+				WHERE [SectionId] = bs.[Id]
+				FOR XML PATH (N'LossFunds'), TYPE
+			),
 		(
 		  SELECT
 				 [@json:Array] = N'true',
@@ -1376,16 +1590,16 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiBinderSectionAdministrator](@UserId INT, @SectionId INT = NULL)
+CREATE PROCEDURE [apiBinderSectionTPA](@UserId INT, @SectionId INT = NULL)
 AS
 BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
  SELECT
-	 [AdministratorId] = CONVERT(NVARCHAR(10), c.[Id]),
-		[Administrator] = c.[DisplayName]
+	 [TPAId] = CONVERT(NVARCHAR(10), c.[Id]),
+		[TPA] = c.[DisplayName]
 	FROM [Company] c
-	 LEFT JOIN [BinderSection] bs ON @SectionId = bs.[Id] AND c.[Id] = bs.[AdministratorId]
+	 LEFT JOIN [BinderSection] bs ON @SectionId = bs.[Id] AND c.[Id] = bs.[TPAId]
 	WHERE c.[TPA] & c.[Active] = 1
 	 OR bs.[Id] IS NOT NULL
 	ORDER BY c.[DisplayName]
@@ -1411,6 +1625,17 @@ BEGIN
 			)
 	ORDER BY [DisplayName]
  RETURN
+END
+GO
+
+-- ##TODO
+CREATE PROCEDURE [apiBinderSectionLossFund](@TPAId INT, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT [LossFundId] = CONVERT(NVARCHAR(10), [Id]), [LossFund] = [Name] FROM [LossFund] WHERE [TPAId] = @TPAId ORDER BY [Name]
+	RETURN
 END
 GO
 
@@ -1442,13 +1667,13 @@ BEGIN
 END
 GO
 
-
 CREATE PROCEDURE [apiBinderSectionSave](
   @SectionId INT = NULL,
 		@BinderId INT = NULL,
 		@ClassId NVARCHAR(5) = NULL,
 		@Title NVARCHAR(255) = NULL,
-  @AdministratorId INT = NULL,
+  @TPAId INT = NULL,
+		@LossFundId INT = NULL,
 		@Carriers XML = NULL,
 		@Experts XML = NULL,
   @UserId INT
@@ -1458,16 +1683,17 @@ BEGIN
  SET NOCOUNT ON
 
 	IF @SectionId IS NULL BEGIN
-	 INSERT INTO [BinderSection] ([BinderId], [ClassId], [Title], [AdministratorId], [CreatedDTO], [CreatedById], [UpdatedDTO], [UpdatedById])
-		VALUES (@BinderId, @ClassId, @Title, @AdministratorId, GETUTCDATE(), @UserId, GETUTCDATE(), @UserId)
+	 INSERT INTO [BinderSection] ([BinderId], [ClassId], [Title], [TPAId], [LossFundId], [CreatedDTO], [CreatedById], [UpdatedDTO], [UpdatedById])
+		VALUES (@BinderId, @ClassId, @Title, @TPAId, @LossFundId, GETUTCDATE(), @UserId, GETUTCDATE(), @UserId)
 		SET @SectionId = SCOPE_IDENTITY()
 	END ELSE BEGIN
 	 UPDATE [BinderSection]
 		SET
-		 [BinderId] = ISNULL(@BinderId, [BinderId]),
-			[ClassId] = ISNULL(@ClassId, [ClassId]),
-			[Title] = ISNULL(@Title, [Title]),
-			[AdministratorId] = ISNULL(@AdministratorId, [AdministratorId]),
+		 [BinderId] = @BinderId,
+			[ClassId] = @ClassId,
+			[Title] = @Title,
+			[TPAId] = @TPAId,
+			[LossFundId] = @LossFundId,
 			[UpdatedDTO] = GETUTCDATE(),
 			[UpdatedById] = @UserId
 		WHERE [Id] = @SectionId
@@ -1600,7 +1826,7 @@ BEGIN
 					 )
 				FROM [BinderSection] bs
 				 JOIN [ClassOfBusiness] cob ON bs.[ClassId] = cob.[Id]
-					JOIN [Company] tpa ON bs.[AdministratorId] = tpa.[Id]
+					JOIN [Company] tpa ON bs.[TPAId] = tpa.[Id]
 				WHERE bs.[BinderId] = b.[Id]
 				ORDER BY bs.[Title]
 				FOR XML PATH (N'Sections'), ELEMENTS XSINIL, TYPE
@@ -1616,16 +1842,16 @@ BEGIN
 	RETURN
 END
 GO
-/*
-CREATE TABLE [Gender] (
-  [Id] CHAR(1) NOT NULL,
+
+CREATE TABLE [GenderEnum] (
+  [Gender] NCHAR(1) NOT NULL,
 		[Description] NVARCHAR(6) NOT NULL,
-		CONSTRAINT [PK_Gender] PRIMARY KEY CLUSTERED ([Id]),
-		CONSTRAINT [UQ_Gender_Description] UNIQUE ([Description])
+		CONSTRAINT [PK_GenderEnum] PRIMARY KEY CLUSTERED ([Gender]),
+		CONSTRAINT [UQ_GenderEnum_Description] UNIQUE ([Description])
 	)
 GO
 
-INSERT INTO [Gender] ([Id], [Description])
+INSERT INTO [GenderEnum] ([Gender], [Description])
 VALUES
  (N'M', N'Male'),
 	(N'F', N'Female')
@@ -1636,81 +1862,44 @@ AS
 BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-	SELECT [Id], [Description] FROM [Gender] ORDER BY [Id]
+	SELECT [Gender], [Description] FROM [GenderEnum] ORDER BY [Gender]
 	RETURN
 END
 GO
 
-
 CREATE TABLE [Incident] (
   [Id] INT NOT NULL IDENTITY (1, 1),
-		[SysNum] AS RIGHT(N'00000000' + CONVERT(NVARCHAR(10), [Id]), 8) PERSISTED,
-		[AdministratorId] INT NOT NULL,
+		[SysNum] AS RIGHT(REPLICATE(N'0', 8) + CONVERT(NVARCHAR(10), [Id]), 8),
+		[BrokerId] INT NOT NULL,
+		[DateBrokerAdvised] DATE NOT NULL,
+		[BrokerContact] NVARCHAR(255) NULL,
+		[BrokerPhone] NVARCHAR(25) NULL,
+  [TPAId] INT NOT NULL,
+		[DateTPANotified] DATE NOT NULL,
 		[DateIncident] DATE NOT NULL,
 		[TimeIncident] TIME NULL,
-		[DateReported] DATE NOT NULL,
 		[Description] NVARCHAR(max) NOT NULL,
-		[CoverholderId] INT NULL,
+		[CountryId] NCHAR(2) NOT NULL,
 		[PolicyholderId] INT NULL,
-		[PolicyNum] NVARCHAR(255) NULL,
+		[CoverholderId] INT NULL,
+		[PolicyReference] NVARCHAR(255) NULL,
 		[PolicyInceptionDate] DATE NULL,
 		[PolicyExpiryDate] DATE NULL,
-		CONSTRAINT [PK_Incident] PRIMARY KEY CLUSTERED ([Id]),
-		CONSTRAINT [UQ_Incident_SysNum] UNIQUE ([SysNum]),
-		CONSTRAINT [FK_Incident_Company_AdministratorId] FOREIGN KEY ([AdministratorId]) REFERENCES [Company] ([Id]),
-		CONSTRAINT [FK_Incident_Company_CoverholderId] FOREIGN KEY ([CoverholderId]) REFERENCES [Company] ([Id]),
-	)
-GO
-
-CREATE TABLE [IncidentStatus] (
-  [Id] TINYINT NOT NULL,
-		[Description] NVARCHAR(255) NOT NULL,
-		[IsOpen] BIT NOT NULL,
-		[SortOrder] TINYINT NOT NULL,
-		CONSTRAINT [PK_IncidentStatus] PRIMARY KEY NONCLUSTERED ([Id]),
-		CONSTRAINT [UQ_IncidentStatus_Description] UNIQUE ([Description]),
-		CONSTRAINT [UQ_IncidentStatus_SortOrder] UNIQUE CLUSTERED ([SortOrder])
-	)
-GO
-
-INSERT INTO [IncidentStatus] ([Id], [Description], [IsOpen], [SortOrder])
-VALUES
- (0, N'Cancelled', 0, 255),
- (1, N'Open', 1, 1),
-	(254, N'Closed', 0, 254)
-GO
-
-CREATE TABLE [IncidentStatusHistory] (
-  [IncidentId] INT NOT NULL,
-		[StatusId] TINYINT NOT NULL,
+		[CreatedDTO] DATETIMEOFFSET NOT NULL,
+		[CreatedById] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
 		[UpdatedById] INT NOT NULL,
-		[UpdatedUTC] DATETIMEOFFSET NOT NULL CONSTRAINT [DF_IncidentStatusHistory_UpdatedUTC] DEFAULT (GETUTCDATE()),
-		CONSTRAINT [PK_IncidentStatusHistory] PRIMARY KEY CLUSTERED ([IncidentId], [UpdatedUTC] DESC),
-		CONSTRAINT [FK_IncidentStatusHistory_Incident] FOREIGN KEY ([IncidentId]) REFERENCES [Incident] ([Id]),
-		CONSTRAINT [FK_IncidentStatusHistory_IncidentStatus] FOREIGN KEY ([StatusId]) REFERENCES [IncidentStatus] ([Id])
+		CONSTRAINT [PK_Incident] PRIMARY KEY NONCLUSTERED ([Id]),
+		CONSTRAINT [UQ_Incident_SysNum] UNIQUE ([SysNum]),
+		CONSTRAINT [FK_Incident_Company_BrokerId] FOREIGN KEY ([BrokerId]) REFERENCES [Company] ([Id]),
+		CONSTRAINT [FK_Incident_Company_TPAId] FOREIGN KEY ([TPAId]) REFERENCES [Company] ([Id]),
+		CONSTRAINT [FK_Incident_Country] FOREIGN KEY ([CountryId]) REFERENCES [Country] ([Id]),
+		CONSTRAINT [CK_Incident_Id] CHECK ([Id] BETWEEN 1 AND 99999999),
+		CONSTRAINT [CK_Incident_DateBrokerAdvised] CHECK ([DateBrokerAdvised] >= [DateIncident]),
+		CONSTRAINT [CK_Incident_DateTPANotified] CHECK ([DateTPANotified] >= [DateBrokerAdvised]),
+		CONSTRAINT [CK_Incident_PolicyExpiryDate] CHECK ([PolicyExpiryDate] >= [PolicyInceptionDate]),
+		CONSTRAINT [CK_Incident_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
 	)
-GO
-
-CREATE VIEW [vwIncidentStatusCurrent]
-AS
-WITH [Status] AS (
-  SELECT
-		 [IncidentId],
-			[StatusId],
-			[UpdatedById],
-			[UpdatedUTC],
-			[Row] = ROW_NUMBER() OVER (PARTITION BY [IncidentId] ORDER BY [UpdatedUTC] DESC)
-		FROM [IncidentStatusHistory]
- )
-SELECT
- [IncidentId] = ish.[IncidentId],
-	[StatusId] = ish.[StatusId],
-	[Status] = s.[Description],
-	[UpdatedById] = ish.[UpdatedById],
-	[UpdatedUTC] = ish.[UpdatedUTC]
-FROM [Status] ish
- JOIN [IncidentStatus] s ON ish.[StatusId] = s.[Id]
-WHERE ish.[Row] = 1
 GO
 
 CREATE TABLE [Claimant] (
@@ -1719,41 +1908,107 @@ CREATE TABLE [Claimant] (
 		[Forename] NVARCHAR(127) NOT NULL,
 		[Surname] NVARCHAR(127) NOT NULL,
 		[Name] AS [Forename] + N' ' + [Surname] PERSISTED,
-		[GenderId] CHAR(1) NULL,
+		[Gender] NCHAR(1) NULL,
 		[DateOfBirth] DATE NULL,
-		CONSTRAINT [PK_Claimant] PRIMARY KEY NONCLUSTERED ([Id]),
-		CONSTRAINT [UQ_Claimant_Id] UNIQUE CLUSTERED ([IncidentId], [Id]),
+		[Address] NVARCHAR(255) NULL,
+		[Postcode] NVARCHAR(25) NULL,
+		[CountryId] NCHAR(2) NOT NULL,
+		[Phone] NVARCHAR(25) NULL,
+		[Mobile] NVARCHAR(25) NULL,
+		[Email] NVARCHAR(255) NULL,
+		[CreatedDTO] DATETIMEOFFSET NOT NULL,
+		[CreatedById] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		CONSTRAINT [PK_Claimant] PRIMARY KEY CLUSTERED ([IncidentId], [Id]),
+		CONSTRAINT [UQ_Claimant_Id] UNIQUE ([Id]),
 		CONSTRAINT [UQ_Claimant_Name] UNIQUE ([IncidentId], [Name]),
 		CONSTRAINT [FK_Claimant_Incident] FOREIGN KEY ([IncidentId]) REFERENCES [Incident] ([Id]),
-		CONSTRAINT [FK_Claimant_Gender] FOREIGN KEY ([GenderId]) REFERENCES [Gender] ([Id])
+		CONSTRAINT [FK_Claimant_Gender] FOREIGN KEY ([Gender]) REFERENCES [GenderEnum] ([Gender]),
+		CONSTRAINT [FK_Claimant_Country] FOREIGN KEY ([CountryId]) REFERENCES [Country] ([Id]),
+		CONSTRAINT [CK_Claimant_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
 	)
 GO
 
-ALTER TABLE [Incident] ADD CONSTRAINT [FK_Incident_Claimant_PolicyholderId] FOREIGN KEY ([PolicyholderId]) REFERENCES [Claimant] ([Id])
+ALTER TABLE [Incident] ADD CONSTRAINT [FK_Incident_Claimant_PolicyholderId] FOREIGN KEY ([Id], [PolicyholderId]) REFERENCES [Claimant] ([IncidentId], [Id])
 GO
-		
-CREATE PROCEDURE [apiIncidents](@UserId INT)
+
+CREATE PROCEDURE [apiClaimantSave](
+  @IncidentId INT = NULL,
+  @ClaimantId INT = NULL,
+		@Forename NVARCHAR(127) = NULL,
+		@Surname NVARCHAR(127) = NULL,
+		@Gender NCHAR(1) = NULL,
+		@DateOfBirth DATE = NULL,
+		@Address NVARCHAR(255) = NULL,
+		@Postcode NVARCHAR(25) = NULL,
+		@CountryId NCHAR(2) = NULL,
+		@Phone NVARCHAR(25) = NULL,
+		@Mobile NVARCHAR(25) = NULL,
+		@Email NVARCHAR(255) = NULL,
+		@UserId INT
+ )
 AS
 BEGIN
  SET NOCOUNT ON
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-	SELECT
-	 [IncidentId] = i.[Id],
-		[SysNum] = i.[SysNum],
-		[TPA] = tpa.[DisplayName],
-		[Coverholder] = cov.[DisplayName],
-		[Policyholder] = cmt.[Name],
-		[DateIncident] = i.[DateIncident],
-		[Status] = ish.[StatusDesc]
-	FROM [Incident] i
-		JOIN [Company] tpa ON i.[AdministratorId] = tpa.[Id]
-		LEFT JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
-	 LEFT JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId] AND i.[PolicyholderId] = cmt.[Id]
-		LEFT JOIN [vwIncidentStatusCurrent] ish ON i.[Id] = ish.[IncidentId]
-	ORDER BY i.[DateIncident] DESC
-	RETURN
+	IF @ClaimantId IS NULL BEGIN
+	 INSERT INTO [Claimant] (
+		  [IncidentId],
+				[Forename],
+				[Surname],
+				[Gender],
+				[DateOfBirth],
+				[Address],
+				[Postcode],
+				[CountryId],
+				[Phone],
+				[Mobile],
+				[Email],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
+		 )
+		SELECT
+		 [IncidentId] = @IncidentId,
+			[Forename] = @Forename,
+			[Surname] = @Surname,
+			[Gender] = @Gender,
+			[DateOfBirth] = @DateOfBirth,
+			[Address] = @Address,
+			[Postcode] = @Postcode,
+			[CountryId] = @CountryId,
+			[Phone] = @Phone,
+			[Mobile] = @Mobile,
+			[Email] = @Email,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		SET @ClaimantId = SCOPE_IDENTITY()
+	END ELSE BEGIN
+	 UPDATE [Claimant]
+		SET
+		 [IncidentId] = @IncidentId,
+			[Forename] = @Forename,
+			[Surname] = @Surname,
+			[Gender] = @Gender,
+			[DateOfBirth] = @DateOfBirth,
+			[Address] = @Address,
+			[Postcode] = @Postcode,
+			[CountryId] = @CountryId,
+			[Phone] = @Phone,
+			[Mobile] = @Mobile,
+			[Email] = @Email,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		WHERE [Id] = @ClaimantId
+	END
+	SELECT [ClaimantId] = @ClaimantId
+	RETURN @ClaimantId
 END
 GO
+
 
 CREATE PROCEDURE [apiIncident](@IncidentId INT, @UserId INT)
 AS
@@ -1761,42 +2016,80 @@ BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 	SELECT
-	 [IncidentId] = i.[Id],
+		[IncidentId] = i.[Id],
 		[SysNum] = i.[SysNum],
-		[AdministratorId] = i.[AdministratorId],
+		[BrokerId] = i.[BrokerId],
+		[DateBrokerAdvised] = i.[DateBrokerAdvised],
+		[BrokerContact] = i.[BrokerContact],
+		[BrokerPhone] = i.[BrokerPhone],
+		[TPAId] = i.[TPAId],
+		[DateTPANotified] = i.[DateTPANotified],
 		[DateIncident] = i.[DateIncident],
 		[TimeIncident] = i.[TimeIncident],
-		[DateReported] = i.[DateReported],
 		[Description] = i.[Description],
+		[CountryId] = i.[CountryId],
+		( -- Policyholder Details
+		  SELECT
+		   [PolicyholderId] = i.[PolicyholderId],
+					[Forename] = cmt.[Forename],
+					[Surname] = cmt.[Surname],
+					[Name] = cmt.[Name],
+					[Gender] = cmt.[Gender],
+					[DateOfBirth] = cmt.[DateOfBirth],
+					[Address] = cmt.[Address],
+					[Postcode] = cmt.[Postcode],
+					[CountryId] = cmt.[CountryId],
+					[Phone] = cmt.[Phone],
+					[Mobile] = cmt.[Mobile],
+					[Email] = cmt.[Email]
+				FROM [Claimant] cmt
+				WHERE cmt.[Id] = i.[PolicyholderId]
+				FOR XML PATH (N'Policyholder'), TYPE
+			),
+		-- Policy Details
 		[CoverholderId] = i.[CoverholderId],
-		[PolicyholderId] = i.[PolicyholderId],
-		[PolicyholderForename] = cmt.[Forename],
-		[PolicyholderSurname] = cmt.[Surname],
-		[PolicyholderGenderId] = cmt.[GenderId],
-		[PolicyholderDateOfBirth] = cmt.[DateOfBirth],
-		[PolicyNum] = i.[PolicyNum],
+		[PolicyReference] = i.[PolicyReference],
 		[PolicyInceptionDate] = i.[PolicyInceptionDate],
 		[PolicyExpiryDate] = i.[PolicyExpiryDate],
-		[StatusId] = ish.[StatusId]
+		-- Tracking
+		[CreatedDTO] = i.[CreatedDTO],
+		[CreatedById] = i.[CreatedById],
+		[UpdatedDTO] = i.[UpdatedDTO],
+		[UpdatedById] = i.[UpdatedById]
 	FROM [Incident] i
-	 LEFT JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId] AND i.[PolicyholderId] = cmt.[Id]
-		LEFT JOIN [vwIncidentStatusCurrent] ish ON i.[Id] = ish.[IncidentId]
 	WHERE i.[Id] = @IncidentId
 	FOR XML PATH (N'Incident')
 	RETURN
 END
 GO
 
-CREATE PROCEDURE [apiIncidentAdministrator](@UserId INT, @IncidentId INT = NULL)
+CREATE PROCEDURE [apiIncidentBroker](@IncidentId INT = NULL, @UserId INT)
 AS
 BEGIN
  SET NOCOUNT ON
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
  SELECT
-	 [AdministratorId] = CONVERT(NVARCHAR(10), c.[Id]),
-		[Administrator] = c.[DisplayName]
+	 [BrokerId] = CONVERT(NVARCHAR(10), c.[Id]),
+		[Broker] = c.[DisplayName]
 	FROM [Company] c
-	 LEFT JOIN [Incident] i ON @IncidentId = i.[Id] AND c.[Id] = i.[AdministratorId]
+	 LEFT JOIN [Incident] i ON @IncidentId = i.[Id] AND c.[Id] = i.[BrokerId]
+	WHERE c.[RBR] & c.[Active] = 1
+	 OR i.[Id] IS NOT NULL
+	ORDER BY c.[DisplayName]
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiIncidentTPA](@IncidentId INT = NULL, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+ SELECT
+	 [TPAId] = CONVERT(NVARCHAR(10), c.[Id]),
+		[TPA] = c.[DisplayName]
+	FROM [Company] c
+	 LEFT JOIN [Incident] i ON @IncidentId = i.[Id] AND c.[Id] = i.[TPAId]
 	WHERE c.[TPA] & c.[Active] = 1
 	 OR i.[Id] IS NOT NULL
 	ORDER BY c.[DisplayName]
@@ -1804,7 +2097,7 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiIncidentCoverholder](@UserId INT, @IncidentId INT = NULL)
+CREATE PROCEDURE [apiIncidentCoverholder](@IncidentId INT = NULL, @UserId INT)
 AS
 BEGIN
  SET NOCOUNT ON
@@ -1821,96 +2114,518 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [apiIncidentSave](
-  @IncidentId INT = NULL,
-		@AdministratorId INT,
-		@DateIncident DATE,
-		@TimeIncident TIME = NULL,
-		@DateReported DATE,
-		@Description NVARCHAR(max),
-		@PolicyholderForename NVARCHAR(127),
-		@PolicyholderSurname NVARCHAR(127),
-		@PolicyholderGenderId NCHAR(1) = NULL,
-		@PolicyholderDateOfBirth DATE = NULL,
-		@CoverholderId INT = NULL,
-		@PolicyNum NVARCHAR(255) = NULL,
-		@PolicyInceptionDate DATE = NULL,
-		@PolicyExpiryDate DATE = NULL,
-		@StatusId TINYINT = NULL,
-		@UserId INT
-	)
+CREATE PROCEDURE [apiIncidentDateBrokerAdvisedSLA](@DateIncident DATE, @DateBrokerAdvised DATE, @UserId INT)
 AS
 BEGIN
  SET NOCOUNT ON
-	DECLARE @ClaimantId INT
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	DECLARE @Days INT
+	SET @Days = DATEDIFF(day, @DateIncident, @DateBrokerAdvised)
+	SELECT [Class] = CASE
+	 WHEN @Days < 0 THEN NULL
+	 WHEN @Days <= 1 THEN N'text-success'
+		WHEN @Days BETWEEN 2 AND 3 THEN N'text-warning'
+		WHEN @Days > 3 THEN N'text-danger'
+	END
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiIncidentDateTPANotifiedSLA](@DateBrokerAdvised DATE, @DateTPANotified DATE, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	DECLARE @Days INT
+	SET @Days = DATEDIFF(day, @DateBrokerAdvised, @DateTPANotified)
+	SELECT [Class] = CASE
+	 WHEN @Days < 0 THEN NULL
+	 WHEN @Days <= 1 THEN N'text-success'
+		WHEN @Days BETWEEN 2 AND 3 THEN N'text-warning'
+		WHEN @Days > 3 THEN N'text-danger'
+	END
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiIncidentSave](
+  @IncidentId INT = NULL,
+		@BrokerId INT = NULL,
+		@DateBrokerAdvised DATE = NULL,
+		@BrokerContact NVARCHAR(255) = NULL,
+		@BrokerPhone NVARCHAR(25) = NULL,
+		@TPAId INT = NULL,
+		@DateTPANotified DATE = NULL,
+		@DateIncident DATE = NULL,
+		@TimeIncident TIME = NULL,
+		@Description NVARCHAR(max) = NULL,
+		@CountryId NCHAR(2) = NULL,
+		-- Policyholder Details
+		@PolicyholderForename NVARCHAR(127) = NULL,
+		@PolicyholderSurname NVARCHAR(127) = NULL,
+		@PolicyholderGender NCHAR(1) = NULL,
+		@PolicyholderDateOfBirth DATE = NULL,
+		@PolicyholderAddress NVARCHAR(255) = NULL,
+		@PolicyholderPostcode NVARCHAR(25) = NULL,
+		@PolicyholderCountryId NCHAR(2) = NULL,
+		@PolicyholderPhone NVARCHAR(25) = NULL,
+		@PolicyholderMobile NVARCHAR(255) = NULL,
+		@PolicyholderEmail NVARCHAR(255) = NULL,
+		-- Policy Details
+		@CoverholderId INT = NULL,
+		@PolicyReference NVARCHAR(255) = NULL,
+		@PolicyInceptionDate DATE = NULL,
+		@PolicyExpiryDate DATE = NULL,
+		-- Status
+		@Status BIT = NULL,
+		@UserId INT
+ )
+AS
+BEGIN
+ SET NOCOUNT ON
+
 	IF @IncidentId IS NULL BEGIN
-	 INSERT INTO [Incident] (
-		  [AdministratorId],
+	 -- New Incident
+		INSERT INTO [Incident] (
+		  [BrokerId],
+				[DateBrokerAdvised],
+				[BrokerContact],
+				[BrokerPhone],
+				[TPAId],
+				[DateTPANotified],
 				[DateIncident],
 				[TimeIncident],
-				[DateReported],
 				[Description],
+				[CountryId],
 				[CoverholderId],
-				[PolicyNum],
+				[PolicyReference],
 				[PolicyInceptionDate],
-				[PolicyExpiryDate]
+				[PolicyExpiryDate],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
 			)
 		SELECT
-		 [AdministratorId] = @AdministratorId,
+		 [BrokerId] = @BrokerId,
+			[DateBrokerAdvised] = @DateBrokerAdvised,
+			[BrokerContact] = @BrokerContact,
+			[BrokerPhone] = @BrokerPhone,
+			[TPAId] = @TPAId,
+			[DateTPANotified] = @DateTPANotified,
 			[DateIncident] = @DateIncident,
 			[TimeIncident] = @TimeIncident,
-			[DateReported] = @DateReported,
 			[Description] = @Description,
+			[CountryId] = @CountryId,
 			[CoverholderId] = @CoverholderId,
-			[PolicyNum] = @PolicyNum,
+			[PolicyReference] = @PolicyReference,
 			[PolicyInceptionDate] = @PolicyInceptionDate,
-			[PolicyExpiryDate] = @PolicyExpiryDate
+			[PolicyExpiryDate] = @PolicyExpiryDate,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
 		SET @IncidentId = SCOPE_IDENTITY()
 	END ELSE BEGIN
 	 UPDATE [Incident]
 		SET
-		 [AdministratorId] = @AdministratorId,
+			[BrokerId] = @BrokerId,
+			[DateBrokerAdvised] = @DateBrokerAdvised,
+			[BrokerContact] = @BrokerContact,
+			[BrokerPhone] = @BrokerPhone,
+			[TPAId] = @TPAId,
+			[DateTPANotified] = @DateTPANotified,
 			[DateIncident] = @DateIncident,
 			[TimeIncident] = @TimeIncident,
-			[DateReported] = @DateReported,
 			[Description] = @Description,
+			[CountryId] = @CountryId,
 			[CoverholderId] = @CoverholderId,
-			[PolicyNum] = @PolicyNum,
+			[PolicyReference] = @PolicyReference,
 			[PolicyInceptionDate] = @PolicyInceptionDate,
-			[PolicyExpiryDate] = @PolicyExpiryDate
+			[PolicyExpiryDate] = @PolicyExpiryDate,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
 		WHERE [Id] = @IncidentId
 	END
-	SELECT @ClaimantId = [PolicyholderId] FROM [Incident] WHERE [Id] = @IncidentId
-	IF @ClaimantId IS NULL BEGIN
-	 INSERT INTO [Claimant] (
-		  [IncidentId],
-				[Forename],
-				[Surname],
-				[GenderId],
-				[DateOfBirth]
-			)
-		SELECT
-		 [IncidentId] = @IncidentId,
-			[Forename] = @PolicyholderForename,
-			[Surname] = @PolicyholderSurname,
-			[GenderId] = @PolicyholderGenderId,
-			[DateOfBirth] = @PolicyholderDateOfBirth
-	 SET @ClaimantId = SCOPE_IDENTITY()
-		UPDATE [Incident] SET [PolicyholderId] = @ClaimantId
-	END ELSE BEGIN
-	 UPDATE [Claimant]
-		SET
-			[Forename] = @PolicyholderForename,
-			[Surname] = @PolicyholderSurname,
-			[GenderId] = @PolicyholderGenderId,
-			[DateOfBirth] = @PolicyholderDateOfBirth
-		WHERE [Id] = @ClaimantId
-	END
-	IF NOT EXISTS (SELECT 1 FROM [vwIncidentStatusCurrent] WHERE [IncidentId] = @IncidentId AND [StatusId] = @StatusId)
-		INSERT INTO [IncidentStatusHistory] ([IncidentId], [StatusId], [UpdatedById], [UpdatedUTC])
-		VALUES (@IncidentId, ISNULL(@StatusId, 1), @UserId, GETUTCDATE())
+
+	-- Policyholder Details
+	DECLARE @ClaimantId INT
+	SELECT @ClaimantId = [PolicyholderId], @PolicyholderCountryId = ISNULL(@PolicyholderCountryId, [CountryId]) FROM [Incident] WHERE [Id] = @IncidentId
+	DECLARE @Policyholder TABLE ([ClaimantId] INT NULL UNIQUE CLUSTERED)
+	INSERT INTO @Policyholder ([ClaimantId])
+	EXEC @ClaimantId = [apiClaimantSave]
+	 @IncidentId = @IncidentId,
+		@ClaimantId = @ClaimantId,
+		@Forename = @PolicyholderForename,
+		@Surname = @PolicyholderSurname,
+		@Gender = @PolicyholderGender,
+		@DateOfBirth = @PolicyholderDateOfBirth,
+		@Address = @PolicyholderAddress,
+		@Postcode = @PolicyholderPostcode,
+		@CountryId = @PolicyholderCountryId,
+		@Phone = @PolicyholderPhone,
+		@Mobile = @PolicyholderMobile,
+		@Email = @PolicyholderEmail,
+		@UserId = @UserId
+	UPDATE [Incident] SET [PolicyholderId] = @ClaimantId WHERE [Id] = @IncidentId
+
 	SELECT [IncidentId] = @IncidentId
+
+	RETURN @IncidentId
+END
+GO
+
+CREATE PROCEDURE [apiClaimants](@IncidentId INT, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [ClaimantId] = cmt.[Id],
+		[Name] = cmt.[Name] + CASE WHEN i.[Id] IS NOT NULL THEN N' (Policyholder)' ELSE N'' END,
+		[Gender] = gen.[Description],
+		[DateOfBirth] = cmt.[DateOfBirth],
+		[Country] = c.[Name]
+	FROM [Claimant] cmt
+	 LEFT JOIN [GenderEnum] gen ON cmt.[Gender] = gen.[Gender]
+		JOIN [Country] c ON cmt.[CountryId] = c.[Id]
+	 LEFT JOIN [Incident] i ON cmt.[IncidentId] = i.[Id] AND cmt.[Id] = i.[PolicyholderId]
+	WHERE cmt.[IncidentId] = @IncidentId
+	ORDER BY CASE WHEN i.[Id] IS NOT NULL THEN 0 ELSE 1 END, cmt.[Name]
 	RETURN
 END
 GO
-*/
+
+CREATE PROCEDURE [apiClaimant](@IncidentId INT, @ClaimantId INT, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [SysNum] = i.[SysNum],
+		[ClaimantId] = cmt.[Id],
+		[Forename] = cmt.[Forename],
+		[Surname] = cmt.[Surname],
+		[Name] = cmt.[Name],
+		[Gender] = cmt.[Gender],
+		[DateOfBirth] = cmt.[DateOfBirth],
+		[Address] = cmt.[Address],
+		[Postcode] = cmt.[Postcode],
+		[CountryId] = cmt.[CountryId],
+		[Phone] = cmt.[Phone],
+		[Mobile] = cmt.[Mobile],
+		[Email] = cmt.[Email]
+	FROM [Claimant] cmt
+	 JOIN [Incident] i ON cmt.[IncidentId] = i.[Id]
+	WHERE cmt.[IncidentId] = @IncidentId
+	 AND cmt.[Id] = @ClaimantId
+	FOR XML PATH (N'Claimant'), TYPE
+	RETURN
+END
+GO
+
+CREATE TABLE [Claim] (
+  [IncidentId] INT NOT NULL,
+		[ClaimantId] INT NOT NULL,
+		[Id] INT NOT NULL IDENTITY (1, 1),
+		[Title] NVARCHAR(255) NOT NULL,
+		[ClassId] NVARCHAR(5) NOT NULL,
+		[BinderId] INT NULL,
+		[CreatedDTO] DATETIMEOFFSET NOT NULL,
+		[CreatedById] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		CONSTRAINT [PK_Claim] PRIMARY KEY NONCLUSTERED ([IncidentId], [ClaimantId], [Id]),
+		CONSTRAINT [UQ_Claim_Id] UNIQUE ([Id]),
+		CONSTRAINT [UQ_Claim_Title] UNIQUE CLUSTERED ([IncidentId], [ClaimantId], [Title]),
+		CONSTRAINT [FK_Claim_Claimant] FOREIGN KEY ([IncidentId], [ClaimantId]) REFERENCES [Claimant] ([IncidentId], [Id]),
+		CONSTRAINT [FK_Claim_ClassOfBusiness] FOREIGN KEY ([ClassId]) REFERENCES [ClassOfBusiness] ([Id]),
+		CONSTRAINT [CK_Claim_UpdatedDTO] CHECK ([UpdatedDTO] >= [CreatedDTO])
+	)
+GO
+
+CREATE TABLE [ClaimStatus] (
+  [ClaimId] INT NOT NULL,
+		[Index] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		[Status] BIT NOT NULL,
+		[StatusDesc] AS CASE WHEN [Status] = 0 THEN N'Closed' WHEN [Index] = 0 THEN N'Open' ELSE N'Reopened' END PERSISTED,
+		[PreviousIndex] AS [Index] - 1 PERSISTED,
+		[PreviousUpdateDTO] DATETIMEOFFSET NULL,
+		[PreviousStatus] AS ~[Status] PERSISTED,
+		CONSTRAINT [PK_ClaimStatus] PRIMARY KEY CLUSTERED ([ClaimId], [Index] DESC, [UpdatedDTO] DESC, [Status]),
+		CONSTRAINT [UQ_ClaimStatus_Index] UNIQUE ([ClaimId], [Index] DESC),
+		CONSTRAINT [FK_ClaimStatus_Claim] FOREIGN KEY ([ClaimId]) REFERENCES [Claim] ([Id]),
+		CONSTRAINT [FK_ClaimStatus_ClaimStatus] FOREIGN KEY ([ClaimId], [PreviousIndex], [PreviousUpdateDTO], [PreviousStatus]) REFERENCES [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [Status]),
+		CONSTRAINT [CK_ClaimStatus_Index] CHECK ([Index] >= 0),
+		CONSTRAINT [CK_ClaimStatus_Status] CHECK ([Index] > 0 OR [Status] = 1),
+		CONSTRAINT [CK_ClaimStatus_PreviousIndex] CHECK ([PreviousIndex] = -1 OR [PreviousUpdateDTO] IS NOT NULL),
+		CONSTRAINT [CK_ClaimStatus_PreviousUpdateDTO] CHECK ([PreviousUpdateDTO] <= [UpdatedDTO])
+	)
+GO
+
+CREATE VIEW [vwClaimStatusCurrent]
+AS
+WITH cte AS (
+  SELECT
+		 [ClaimId],
+			[Index],
+			[UpdatedDTO],
+			[UpdatedById],
+			[Status],
+			[StatusDesc],
+			[Row] = ROW_NUMBER() OVER (PARTITION BY [ClaimId] ORDER BY [Index] DESC)
+		FROM [ClaimStatus]
+	)
+SELECT
+ [ClaimId] = cte.[ClaimId],
+	[Index] = cte.[Index],
+	[UpdatedDTO] = cte.[UpdatedDTO],
+	[UpdatedById] = cte.[UpdatedById],
+	[UpdatedBy] = u.[Name],
+	[Status] = cte.[Status],
+	[StatusDesc] = cte.[StatusDesc]
+FROM cte
+ JOIN [User] u ON cte.[UpdatedById] = u.[Id]
+WHERE cte.[Row] = 1
+GO
+
+CREATE TABLE [ClaimWithEnum] (
+  [With] NVARCHAR(25) NOT NULL,
+		[SortOrder] TINYINT NOT NULL,
+		CONSTRAINT [PK_ClaimWithEnum] PRIMARY KEY NONCLUSTERED ([With]),
+		CONSTRAINT [UQ_ClaimWithEnum_SortOrder] UNIQUE ([SortOrder])
+	)
+GO
+
+INSERT INTO [ClaimWithEnum] ([With], [SortOrder])
+VALUES
+ (N'Broker', 1),
+	(N'Bureau Leader', 2),
+	(N'Further Agreement Party', 3),
+	(N'XCS', 4)
+GO
+
+CREATE TABLE [ClaimWith] (
+  [ClaimId] INT NOT NULL,
+		[Index] INT NOT NULL,
+		[UpdatedDTO] DATETIMEOFFSET NOT NULL,
+		[UpdatedById] INT NOT NULL,
+		[With] NVARCHAR(25) NOT NULL,
+		[PreviousIndex] AS [Index] - 1 PERSISTED,
+		[PreviousUpdateDTO] DATETIMEOFFSET NULL,
+		[PreviousWith] NVARCHAR(25) NULL,
+		CONSTRAINT [PK_ClaimWith] PRIMARY KEY CLUSTERED ([ClaimId], [Index] DESC, [UpdatedDTO] DESC),
+		CONSTRAINT [UQ_ClaimWith_Index] UNIQUE ([ClaimId], [Index] DESC),
+		CONSTRAINT [CK_ClaimWith_Index] CHECK ([Index] >= 0),
+		CONSTRAINT [CK_ClaimWith_PreviousUpdateDTO] CHECK ([Index] = 0 OR [PreviousUpdateDTO] IS NOT NULL),
+		CONSTRAINT [CK_ClaimWith_PreviousWith] CHECK ([Index] = 0 OR [PreviousWith] IS NOT NULL)
+	)
+GO
+
+CREATE PROCEDURE [apiClaims](@IncidentId INT, @ClaimantId INT, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [ClaimId] = clm.[Id],
+		[Title] = clm.[Title],
+		[Class] = cob.[Description],
+		[UMR] = bin.[UMR],
+		[Incurred] = CONVERT(MONEY, 0),
+		[Status] = csc.[StatusDesc]
+	FROM [Claim] clm
+	 JOIN [Claimant] cmt ON clm.[IncidentId] = cmt.[IncidentId] AND clm.[ClaimantId] = cmt.[Id]
+		JOIN [Incident] i ON cmt.[IncidentId] = i.[Id]
+		JOIN [ClassOfBusiness] cob ON clm.[ClassId] = cob.[Id]
+		LEFT JOIN [Binder] bin ON clm.[BinderId] = bin.[Id]
+		JOIN [vwClaimStatusCurrent] csc ON clm.[Id] = csc.[ClaimId]
+	WHERE clm.[IncidentId] = @IncidentId
+	 AND clm.[ClaimantId] = @ClaimantId
+	ORDER BY [Title]
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiClaim](@IncidentId INT, @ClaimantId INT, @ClaimId INT = NULL, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [ClaimId] = clm.[Id],
+	 [SysNum] = i.[SysNum],
+		[Claimant] = cmt.[Name],
+		[Title] = clm.[Title],
+		[ClassId] = clm.[ClassId],
+		[IncidentCountry] = ico.[Name],
+		[Coverholder] = cov.[DisplayName],
+		[PolicyholderCountry] = ISNULL(pco.[Name], ico.[Name]),
+		[PolicyReference] = i.[PolicyReference],
+		[PolicyInceptionDate] = i.[PolicyInceptionDate],
+		[PolicyExpiryDate] = i.[PolicyExpiryDate],
+		[BinderId] = clm.[BinderId],
+		( -- Status
+		  SELECT
+					[Status] = csc.[Status],
+					[UpdatedDTO] = csc.[UpdatedDTO],
+					[UpdatedBy] = csc.[UpdatedBy],
+					[DateFirstClosed] = MIN(CASE WHEN [Status] = 0 THEN [UpdatedDTO] END),
+					[ReopenCount] = COUNT(CASE WHEN [Index] > 0 AND [Status] = 1 THEN 1 END)
+				FROM [ClaimStatus]
+				WHERE [ClaimId] = clm.[Id]
+				GROUP BY [ClaimId]
+				FOR XML PATH (N'Status'), TYPE
+			)
+	FROM [Incident] i
+	 JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId]
+		JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
+		JOIN [Country] ico ON i.[CountryId] = ico.[Id]
+		LEFT JOIN [Claimant] ph
+		  JOIN [Country] pco ON ph.[CountryId] = pco.[Id]
+		 ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
+		LEFT JOIN [Claim] clm ON cmt.[IncidentId] = clm.[IncidentId] AND cmt.[Id] = clm.[ClaimantId] AND @ClaimId = clm.[Id]
+	 LEFT JOIN [vwClaimStatusCurrent] csc ON clm.[Id] = csc.[ClaimId]
+	WHERE i.[Id] = @IncidentId
+	 AND cmt.[Id] = @ClaimantId
+	FOR XML PATH (N'Claim')
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiClaimBinder](@IncidentId INT, @ClassId NVARCHAR(5), @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT DISTINCT
+	 [BinderId] = CONVERT(NVARCHAR(10), b.[Id]),
+		[Binder] = b.[UMR] + N': ' + CONVERT(NVARCHAR(10), b.[InceptionDate], 103) + N' to ' + CONVERT(NVARCHAR(10), b.[ExpiryDate], 103)
+	FROM [Incident] i
+	 LEFT JOIN [Claimant] ph ON i.[Id] = ph.[IncidentId] AND i.[PolicyholderId] = ph.[Id]
+		JOIN [Binder] b ON i.[CoverholderId] = b.[CoverholderId]
+		JOIN [vwTerritoryCountries] rty ON b.[RisksTerritoryId] = rty.[TerritoryId] AND i.[CountryId] = rty.[CountryId]
+		JOIN [vwTerritoryCountries] dty ON b.[DomiciledTerritoryId] = dty.[TerritoryId] AND ISNULL(ph.[CountryId], i.[CountryId]) = dty.[CountryId]
+		JOIN [vwTerritoryCountries] lty ON b.[LimitsTerritoryId] = lty.[TerritoryId] AND i.[CountryId] = lty.[CountryId]
+		JOIN [BinderSection] bs ON b.[Id] = bs.[BinderId] AND @ClassId = bs.[ClassId]
+	WHERE i.[PolicyInceptionDate] BETWEEN b.[InceptionDate] AND b.[ExpiryDate]
+	ORDER BY 2
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiClaimStatus](@ClaimId INT = NULL, @UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	DECLARE @Index INT, @Status BIT
+	SELECT @Index = [Index], @Status = [Status] FROM [vwClaimStatusCurrent] WHERE [ClaimId] = @ClaimId
+	SELECT [Status] = N'0', [StatusDesc] = N'Closed' UNION ALL
+	SELECT N'1', CASE WHEN ISNULL(@Index, 0) = 0 THEN N'Open' ELSE N'Reopened' END
+	ORDER BY 1 DESC
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiClaimSave](
+  @IncidentId INT,
+		@ClaimantId INT,
+		@ClaimId INT = NULL,
+		@Title NVARCHAR(255) = NULL,
+		@ClassId NVARCHAR(5) = NULL,
+		@BinderId INT = NULL,
+		@Status BIT = NULL,
+		@UserId INT
+ )
+AS
+BEGIN
+ SET NOCOUNT ON
+	IF @ClaimId IS NULL BEGIN
+	 INSERT INTO [Claim] (
+		  [IncidentId],
+				[ClaimantId],
+				[Title],
+				[ClassId],
+				[BinderId],
+				[CreatedDTO],
+				[CreatedById],
+				[UpdatedDTO],
+				[UpdatedById]
+		 )
+		SELECT
+		 [IncidentId] = @IncidentId,
+			[ClaimantId] = @ClaimantId,
+			[Title] = @Title,
+			[ClassId] = @ClassId,
+			[BinderId] = @BinderId,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		SET @ClaimId = SCOPE_IDENTITY()
+		-- Set initial status to "Open"
+		INSERT INTO [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [UpdatedById], [Status])
+		VALUES (@ClaimId, 0, GETUTCDATE(), @UserId, 1)
+	END ELSE BEGIN
+  UPDATE [Claim]
+		SET
+		 [IncidentId] = @IncidentId,
+			[ClaimantId] = @ClaimantId,
+			[Title] = @Title,
+			[ClassId] = @ClassId,
+			[BinderId] = @BinderId,
+			[CreatedDTO] = GETUTCDATE(),
+			[CreatedById] = @UserId,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId
+		WHERE [Id] = @ClaimId
+		-- Update incident status
+		INSERT INTO [ClaimStatus] ([ClaimId], [Index], [UpdatedDTO], [UpdatedById], [Status], [PreviousUpdateDTO])
+		SELECT
+		 [ClaimId],
+			[Index] = [Index] + 1,
+			[UpdatedDTO] = GETUTCDATE(),
+			[UpdatedById] = @UserId,
+			[Status] = @Status,
+			[PreviousUpdateDTO] = [UpdatedDTO]
+		FROM [vwClaimStatusCurrent]
+		WHERE [ClaimId] = @ClaimId
+		 AND [Status] <> ISNULL(@Status, [Status])
+	END
+	SELECT [ClaimId] = @ClaimId
+	RETURN @ClaimId
+END
+GO
+
+CREATE PROCEDURE [apiIncidents](@UserId INT)
+AS
+BEGIN
+ SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT
+	 [IncidentId] = i.[Id],
+		[SysNum] = i.[SysNum],
+		[TPA] = tpa.[DisplayName],
+		[Coverholder] = cov.[DisplayName],
+		[Policyholder] = cmt.[Name],
+		[DateIncident] = i.[DateIncident],
+		[Status] = CASE c.[Status] WHEN 1 THEN N'Open' WHEN 0 THEN N'Closed' ELSE N'Incident Only' END
+	FROM [Incident] i
+		JOIN [Company] tpa ON i.[TPAId] = tpa.[Id]
+		LEFT JOIN [Company] cov ON i.[CoverholderId] = cov.[Id]
+	 LEFT JOIN [Claimant] cmt ON i.[Id] = cmt.[IncidentId] AND i.[PolicyholderId] = cmt.[Id]
+		LEFT JOIN (
+		  SELECT
+				 [IncidentId] = clm.[IncidentId],
+					[Status] = CONVERT(BIT, MAX(CONVERT(INT, cst.[Status])))
+				FROM [Claim] clm
+				 JOIN [vwClaimStatusCurrent] cst ON clm.[Id] = cst.[ClaimId]
+				GROUP BY clm.[IncidentId]
+		 ) c ON i.[Id] = c.[IncidentId]
+	ORDER BY i.[DateIncident] DESC
+	RETURN
+END
+GO

@@ -66,6 +66,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\adventlogo.png" />
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Scripts\angular-locale_en-gb.js" />
@@ -114,7 +115,7 @@
     <Content Include="Scripts\sui.js" />
     <Content Include="Scripts\vfs_fonts.js" />
     <Content Include="SQL\Advent.sql" />
-    <Content Include="SQL\Incident.sql" />
+    <Content Include="SQL\Companies.sql" />
     <Content Include="SQL\Setup.sql" />
     <Content Include="Views\binder.html" />
     <Content Include="Views\binders.html" />

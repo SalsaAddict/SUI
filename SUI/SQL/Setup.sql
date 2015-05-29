@@ -31,7 +31,10 @@ GO
 INSERT INTO [User] ([Forename], [Surname], [Email], [Password])
 SELECT N'Pierre', N'Henry', N'pierre@whitespace.co.uk', N'3YsVMhbpwLiFm7EEHE4pY5Svgyh0hVHaLKYa5dMSGVY=:khgtioJvgkNmAOstoDLRoXRxMEG8EI0Fqiq3xoVVyNA=' UNION ALL
 SELECT N'Andrew', N'Sedcole', N'andrew.sedcole@whitespace.co.uk', N'3YsVMhbpwLiFm7EEHE4pY5Svgyh0hVHaLKYa5dMSGVY=:khgtioJvgkNmAOstoDLRoXRxMEG8EI0Fqiq3xoVVyNA=' UNION ALL
-SELECT N'Andrzej', N'Trybulski', N'andrzej@whitespace.co.uk', N'3YsVMhbpwLiFm7EEHE4pY5Svgyh0hVHaLKYa5dMSGVY=:khgtioJvgkNmAOstoDLRoXRxMEG8EI0Fqiq3xoVVyNA='
+SELECT N'Andrzej', N'Trybulski', N'andrzej@whitespace.co.uk', N'3YsVMhbpwLiFm7EEHE4pY5Svgyh0hVHaLKYa5dMSGVY=:khgtioJvgkNmAOstoDLRoXRxMEG8EI0Fqiq3xoVVyNA=' UNION ALL
+SELECT N'Paul', N'Bermingham', N'paul.bermingham@advent.global', N'7RiOHy5Y4Maw/IOY8lWC3d4d1LDFmFB7BTXY2vhHq8g=:9yxOudFFZVRTnJ4dJXWxTur0jZndF+p0Yy5wxLYHxu8=' UNION ALL
+SELECT N'Paul', N'Argent', N'paul.argent@advent.global', N'7RiOHy5Y4Maw/IOY8lWC3d4d1LDFmFB7BTXY2vhHq8g=:9yxOudFFZVRTnJ4dJXWxTur0jZndF+p0Yy5wxLYHxu8=' UNION ALL
+SELECT N'Jerry', N'Macarthur', N'erry.Macarthur@advent.global', N'7RiOHy5Y4Maw/IOY8lWC3d4d1LDFmFB7BTXY2vhHq8g=:9yxOudFFZVRTnJ4dJXWxTur0jZndF+p0Yy5wxLYHxu8='
 GO
 
 CREATE PROCEDURE [apiUserLogin](@Email NVARCHAR(255))
